@@ -1,16 +1,15 @@
 [package]
-name = "dioxus-fullstack-test"
+name = "antar-clone"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dioxus = "0.4.0"
-dioxus-desktop = "0.4.0"
-# dioxus-fullstack = "0.4.1"
+dioxus = { path = "../dioxus/packages/dioxus" }
 
-# [features]
-# default = []
-# ssr = ["dioxus-fullstack/axum"]
-# web = ["dioxus-fullstack/web"]
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+dioxus-desktop = {path = "../dioxus/packages/desktop" }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+dioxus-web = { path = "../dioxus/packages/web" }

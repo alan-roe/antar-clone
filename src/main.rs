@@ -8,12 +8,14 @@ use dioxus::{
 // use dioxus_fullstack::prelude::*;
 
 fn main() {
+    #[cfg(not(target_arch = "wasm32"))]
     dioxus_desktop::launch_cfg(
         app,
         dioxus_desktop::Config::new()
             .with_custom_head(r#"<link rel="stylesheet" href="public/tailwind.css">"#.to_string()),
     );
-    // LaunchBuilder::new(app).launch();
+    #[cfg(target_arch = "wasm32")]
+    dioxus_web::launch(app);
 }
 
 type Personas = Vec<Persona>;
@@ -170,7 +172,7 @@ fn PersonaMessage(cx: Scope<Message>) -> Element {
     })
 }
 
-#[inline_props]
+#[component]
 fn MessageBox(cx: Scope) -> Element {
     let msgs = use_shared_state::<Messages>(cx).unwrap();
     // let scroll_top = use_shared_state::<Option<_>>(cx).unwrap();
@@ -228,7 +230,7 @@ fn SendIcon(cx: Scope) -> Element {
     })
 }
 
-#[inline_props]
+#[component]
 fn AddPersonaButton<'a>(cx: Scope, onclick: EventHandler<'a, MouseEvent>) -> Element {
     cx.render(rsx! {
         div { class: "flex flex-col items-center w-auto h-auto leading-none pb-3",
@@ -266,7 +268,7 @@ fn AddPersonaIcon(cx: Scope) -> Element {
     })
 }
 
-#[inline_props]
+#[component]
 fn PersonaButton<'a>(
     cx: Scope,
     name: String,
@@ -281,7 +283,7 @@ fn PersonaButton<'a>(
     })
 }
 
-#[inline_props]
+#[component]
 fn PersonaIcon(cx: Scope, colour: String) -> Element {
     cx.render(rsx! {
         div {
