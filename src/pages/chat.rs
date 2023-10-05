@@ -107,6 +107,7 @@ fn MessageInput(cx: Scope) -> Element {
     } = use_chat_context(cx);
     cx.render(rsx!{
         input {
+            id: "messageInput",
             class: "flex p-2 h-full max-h-16 w-full rounded-xl bg-gray-200 outline-none hover:outline-none",
             placeholder: "Add message ...",
             oninput: move |evt| { current_message.set(evt.value.clone()) },
@@ -198,7 +199,10 @@ fn PersonaSelect(cx: Scope) -> Element {
             PersonaButton {
                 name: persona.name.clone(),
                 colour: persona.colour,
-                onclick: move |_| persona_index.set(i)
+                onclick: move |_| {
+                    persona_index.set(i);
+                    use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+                }
             }
         }
     }})
