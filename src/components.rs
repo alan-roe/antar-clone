@@ -1,45 +1,15 @@
+use crate::colours::*;
+use crate::data::*;
 use dioxus::prelude::*;
 use dioxus_signals::Signal;
 use uuid::Uuid;
-use crate::data::*;
-use crate::colours::*;
 
-fn text_colour_from_bg((r, g, b): Rgb) -> Colour {
-  if (u16::from(r) + u16::from(g) + u16::from(b)) >= (255 * 3 / 2) {
-    Colour::Colour((0, 0, 0))
-  } else {
-    Colour::Colour((255, 255, 255))
-  }
-}
-
-#[component]
-pub fn MessageBox(cx: Scope, msgs: Signal<Messages>) -> Element {
-    cx.render(rsx! {
-        div { class: "flex flex-col flex-grow border rounded-xl p-4 w-full max-w-2xl gap-2 overflow-y-scroll",
-            for (i , msg) in msgs.read().msgs.iter().enumerate() {
-                // PersonaMessage { msg: msg.msg.clone(), persona: msg.persona.clone() }
-                div { key: "{msg.uuid}", class: if i == 0 { "flex-col gap-2 mt-auto" } else { "flex-col gap-2" },
-                    if i == 0 || !msg.persona.eq(&msgs.read().msgs.get(i-1).unwrap().persona) {
-                        rsx! {
-                            div { 
-                            class: "flex items-center",
-                            PersonaIcon { colour: msg.persona.colour }
-                            span { "{msg.persona.name}" }
-                            }
-                        }
-                    }
-                    div {
-                        class: "rounded-lg px-2 py-1 w-fit",
-                        style: "{Colour::BgColour(msg.persona.colour)} {text_colour_from_bg(msg.persona.colour)}",
-                        onmounted: move |cx2| {
-                            cx2.inner().scroll_to(ScrollBehavior::Smooth);
-                        },
-                        span { "{msg.msg}" }
-                    }
-                }
-            }
-        }
-    })
+pub fn text_colour_from_bg((r, g, b): Rgb) -> Colour {
+    if (u16::from(r) + u16::from(g) + u16::from(b)) >= (255 * 3 / 2) {
+        Colour::Colour((0, 0, 0))
+    } else {
+        Colour::Colour((255, 255, 255))
+    }
 }
 
 #[component]
@@ -58,33 +28,33 @@ pub fn PersonaButton<'a>(
 }
 
 pub fn PersonaMessage(cx: Scope<Message>) -> Element {
-let text_colour = {
-  let (r, g, b) = cx.props.persona.colour;
-  if (u16::from(r) + u16::from(g) + u16::from(b)) >= (255 * 3 / 2) {
-    Colour::Colour((0, 0, 0))
-  } else {
-    Colour::Colour((255, 255, 255))
-  }
-};
-  cx.render(rsx! {
-    div { class: "flex-col gap-2",
-        div { class: "flex items-center",
-            PersonaIcon { colour: cx.props.persona.colour }
-            span { "{cx.props.persona.name}" }
+    let text_colour = {
+        let (r, g, b) = cx.props.persona.colour;
+        if (u16::from(r) + u16::from(g) + u16::from(b)) >= (255 * 3 / 2) {
+            Colour::Colour((0, 0, 0))
+        } else {
+            Colour::Colour((255, 255, 255))
         }
-        div {
-            class: "rounded-lg px-2 py-1 w-fit",
-            style: r"
+    };
+    cx.render(rsx! {
+        div { class: "flex-col gap-2",
+            div { class: "flex items-center",
+                PersonaIcon { colour: cx.props.persona.colour }
+                span { "{cx.props.persona.name}" }
+            }
+            div {
+                class: "rounded-lg px-2 py-1 w-fit",
+                style: r"
               {Colour::BgColour(cx.props.persona.colour)};
               {text_colour};",
-            span { "{cx.props.msg}" }
+                span { "{cx.props.msg}" }
+            }
         }
-    }
-})
+    })
 }
 
 #[component]
-fn PersonaIcon(cx: Scope, colour: Rgb) -> Element {
+pub fn PersonaIcon(cx: Scope, colour: Rgb) -> Element {
     cx.render(rsx! {
         div {
             svg {
@@ -102,7 +72,6 @@ fn PersonaIcon(cx: Scope, colour: Rgb) -> Element {
         }
     })
 }
-
 
 #[component]
 pub fn AddPersonaButton<'a>(cx: Scope, onclick: EventHandler<'a, MouseEvent>) -> Element {
@@ -143,7 +112,7 @@ fn AddPersonaIcon(cx: Scope) -> Element {
 }
 
 pub fn SendIcon(cx: Scope) -> Element {
-  cx.render(rsx! {
+    cx.render(rsx! {
     svg {
         xmlns: "http://www.w3.org/2000/svg",
         fill: "none",

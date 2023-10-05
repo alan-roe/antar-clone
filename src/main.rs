@@ -1,7 +1,7 @@
 #![allow(non_snake_case, unused)]
+mod colours;
 mod components;
 mod data;
-mod colours;
 mod pages;
 
 use components::*;
@@ -38,4 +38,3 @@ fn app(cx: Scope) -> Element {
         }
     })
 }
-

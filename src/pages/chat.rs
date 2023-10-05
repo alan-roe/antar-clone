@@ -5,10 +5,10 @@ use dioxus::html::input_data::keyboard_types::KeyboardEvent;
 use dioxus::html::input_data::keyboard_types::Modifiers;
 use uuid::Uuid;
 
+use crate::colours::*;
 use dioxus::prelude::*;
 use dioxus_signals::*;
-
-#[derive(Clone, Copy, PartialEq, Props)]
+#[derive(Clone, Copy, Default, PartialEq, Props)]
 struct ChatData {
     messages: Signal<Messages>,
     personas: Signal<Personas>,
@@ -17,21 +17,14 @@ struct ChatData {
 }
 
 impl ChatData {
-    fn new(cx: Scope) -> ChatData {
-        ChatData {
-            messages: use_signal(cx, || Messages { msgs: Vec::new() }),
-            personas: use_signal(cx, || {
-                vec![Persona {
-                    uuid: Uuid::new_v4(),
-                    name: "Me".to_string(),
-                    colour: (0x49, 0x55, 0x65),
-                }]
-            }),
-            persona_index: use_signal(cx, || 0),
-            current_message: use_signal(cx, String::new),
-        }
+    fn init(self) -> Self {
+        self.personas.push(Persona {
+            uuid: Uuid::new_v4(),
+            name: "Me".to_string(),
+            colour: (0x49, 0x55, 0x65),
+        });
+        self
     }
-
     fn on_send(&self) {
         let Self {
             messages,
@@ -48,41 +41,68 @@ impl ChatData {
     }
 }
 
+fn use_chat_context(cx: Scope) -> ChatData {
+    *use_context(cx).expect("no chat context provided")
+}
+
 pub fn Chat(cx: Scope) -> Element {
     // Shared State
+    use_context_provider(cx, || ChatData::default().init());
     let chat_data @ ChatData {
         messages,
         personas,
         persona_index,
         current_message,
-    } = ChatData::new(cx);
+    } = use_chat_context(cx);
 
-    cx.render(rsx!{
+    cx.render(rsx! {
         // TODO 3 Row Grid Layout
-        MessageBox { msgs: messages }
-        MessageInput {
-            messages: messages,
-            personas: personas,
-            persona_index: persona_index,
-            current_message: current_message
-        }
-        BottomBar {
-            messages: messages,
-            personas: personas,
-            persona_index: persona_index,
-            current_message: current_message
-        }
-        
+        // div {
+            MessageBox {}
+            MessageInput {}
+            BottomBar {}
+        // }
     })
 }
 
-fn MessageInput(cx: Scope<ChatData>) -> Element {
+#[component]
+pub fn MessageBox(cx: Scope) -> Element {
+    let ChatData { messages, .. } = use_chat_context(cx);
+    cx.render(rsx! {
+        div { class: "flex flex-col flex-grow border rounded-xl p-4 w-full max-w-2xl gap-2 overflow-y-scroll",
+            for (i , msg) in messages.read().msgs.iter().enumerate() {
+                // PersonaMessage { msg: msg.msg.clone(), persona: msg.persona.clone() }
+                div { key: "{msg.uuid}", class: if i == 0 { "flex-col gap-2 mt-auto" } else { "flex-col gap-2" },
+                    if i == 0 || !msg.persona.eq(&messages.read().msgs.get(i-1).unwrap().persona) {
+                        rsx! {
+                            div {
+                                class: "flex items-center",
+                                PersonaIcon { colour: msg.persona.colour }
+                                span { "{msg.persona.name}" }
+                            }
+                        }
+                    }
+                    div {
+                        class: "rounded-lg px-2 py-1 w-fit",
+                        style: "{Colour::BgColour(msg.persona.colour)} {text_colour_from_bg(msg.persona.colour)}",
+                        onmounted: move |cx2| {
+                            cx2.inner().scroll_to(ScrollBehavior::Smooth);
+                        },
+                        span { "{msg.msg}" }
+                    }
+                }
+            }
+        }
+    })
+}
+
+fn MessageInput(cx: Scope) -> Element {
     let chat_data @ ChatData {
         current_message,
         persona_index,
         personas,
         ..
-    } = cx.props;
+    } = use_chat_context(cx);
     cx.render(rsx!{
         input {
             class: "flex max-w-2xl p-2 h-auto w-full rounded-xl bg-gray-100 outline-none focus:outline-none",
@@ -130,42 +150,34 @@ fn MessageInput(cx: Scope<ChatData>) -> Element {
     })
 }
 
-fn BottomBar(cx: Scope<ChatData>) -> Element {
+fn BottomBar(cx: Scope) -> Element {
     let chat_data @ ChatData {
         persona_index,
         personas,
         ..
-    } = cx.props;
+    } = use_chat_context(cx);
     cx.render(rsx!{
         div {
             class: "flex h-auto gap-x-2 w-full max-w-2xl",
             div { class: "flex items-end gap-x-2 h-auto w-full min-w-0 overflow-x-scroll",
                 AddPersonaButton { onclick: move |_| {} }
                 PersonaSelect {
-                    personas: *personas,
-                    persona_index: *persona_index,
                 }
             }
             button {
                 class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
-                onclick: move |_| chat_data.on_send(),
                 SendIcon {}
             }
         }
     })
 }
 
-#[derive(Clone, Copy, PartialEq, Props)]
-struct PersonaFrameProps {
-    personas: Signal<Personas>,
-    persona_index: Signal<usize>,
-}
-
-fn PersonaSelect(cx: Scope<PersonaFrameProps>) -> Element {
-    let PersonaFrameProps {
+fn PersonaSelect(cx: Scope) -> Element {
+    let ChatData {
         personas,
         persona_index,
-    } = cx.props;
+        ..
+    } = use_chat_context(cx);
     cx.render(rsx!{
     for (i , persona) in personas.read().iter().enumerate() {
         div { key: "{persona.uuid}", class: "flex flex-col justify-center items-center",
