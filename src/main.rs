@@ -31,10 +31,15 @@ fn main() {
 
 fn app(cx: Scope) -> Element {
     cx.render(rsx! {
-        div { class: "font-sans relative flex gap-2 min-h-screen max-h-screen flex-col overflow-hidden bg-gray-50 px-2 py-1 items-center",
-            h1 { class: "text-4xl bg-center font-bold underline", "Antar Clone" }
+        div { 
+            class: "grid font-sans gap-y-2 min-h-screen min-w-full max-h-screen max-w-full bg-gray-50 items-center",
+            style: "grid-template-rows: auto minmax(0, 1fr);",
+            h1 { class: "text-4xl font-bold underline mx-auto mb-auto", "Antar Clone" }
             // TODO Router for different pages
-            Chat {}
+            div {
+                class: "w-full max-w-2xl h-full mx-auto",
+                Chat {}
+            }
         }
     })
 }

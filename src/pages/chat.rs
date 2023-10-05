@@ -57,11 +57,13 @@ pub fn Chat(cx: Scope) -> Element {
 
     cx.render(rsx! {
         // TODO 3 Row Grid Layout
-        // div {
-            MessageBox {}
-            MessageInput {}
-            BottomBar {}
-        // }
+        div {
+            class: "grid grid-rows-3 h-full w-full",
+            style: "grid-template-rows: minmax(0, 1fr) auto auto;",
+            div {MessageBox {}}
+            div {MessageInput {}}
+            div {BottomBar {}}
+        }
     })
 }
 
@@ -69,7 +71,7 @@ pub fn Chat(cx: Scope) -> Element {
 pub fn MessageBox(cx: Scope) -> Element {
     let ChatData { messages, .. } = use_chat_context(cx);
     cx.render(rsx! {
-        div { class: "flex flex-col flex-grow border rounded-xl p-4 w-full max-w-2xl gap-2 overflow-y-scroll",
+        div { class: "flex flex-col flex-grow border rounded-xl p-4 min-h-full w-full max-w-2xl gap-2 max-h-full overflow-y-scroll",
             for (i , msg) in messages.read().msgs.iter().enumerate() {
                 // PersonaMessage { msg: msg.msg.clone(), persona: msg.persona.clone() }
                 div { key: "{msg.uuid}", class: if i == 0 { "flex-col gap-2 mt-auto" } else { "flex-col gap-2" },
@@ -105,7 +107,7 @@ fn MessageInput(cx: Scope) -> Element {
     } = use_chat_context(cx);
     cx.render(rsx!{
         input {
-            class: "flex max-w-2xl p-2 h-auto w-full rounded-xl bg-gray-100 outline-none focus:outline-none",
+            class: "flex p-2 h-full max-h-16 w-full rounded-xl bg-gray-200 outline-none hover:outline-none",
             placeholder: "Add message ...",
             oninput: move |evt| { current_message.set(evt.value.clone()) },
             onkeyup: move |evt| {
