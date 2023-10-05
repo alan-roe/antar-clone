@@ -5,6 +5,7 @@ mod colours;
 
 use components::*;
 use data::*;
+use uuid::Uuid;
 
 use std::rc::Rc;
 
@@ -31,6 +32,7 @@ fn app(cx: Scope) -> Element {
     let msgs = use_shared_state::<Messages>(cx).unwrap();
     let personas: &UseRef<Personas> = use_ref(cx, || {
         vec![Persona {
+            uuid: Uuid::new_v4(),
             name: "Me".to_string(),
             colour: (0x49, 0x55, 0x65),
         }]
@@ -44,6 +46,7 @@ fn app(cx: Scope) -> Element {
 
     let send_msg = || {
         msgs.write().msgs.push(Message {
+            uuid: Uuid::new_v4(),
             persona: personas
                 .with(|personas| personas.get(*persona_index.current()).unwrap().clone()),
             msg: (*input_str.current()).clone(),
@@ -54,8 +57,12 @@ fn app(cx: Scope) -> Element {
     use_shared_state_provider::<Option<Rc<MountedData>>>(cx, || None);
 
     cx.render(rsx! {
-        div { class: "font-sans relative flex gap-2 min-h-screen max-h-screen flex-col overflow-hidden bg-gray-50 px-2 py-1 items-center",
-            h1 { class: "text-4xl bg-center font-bold underline", "Antar Clone" }
+        div { 
+            class: "font-sans relative flex gap-2 min-h-screen max-h-screen flex-col overflow-hidden bg-gray-50 px-2 py-1 items-center",
+            h1 { 
+                class: "text-4xl bg-center font-bold underline",
+                "Antar Clone" 
+            }
             MessageBox {
             }
             input {
@@ -84,10 +91,12 @@ fn app(cx: Scope) -> Element {
                     } else if evt.key() == Key::Character("[".into()) {
                         personas.with_mut(|personas| {
                             personas.push(Persona {
+                                uuid: Uuid::new_v4(),
                                 name: "Coder".to_string(),
                                 colour: (0x25, 0x25, 0x25),
                             });
                             personas.push(Persona {
+                                uuid: Uuid::new_v4(),
                                 name: "Project Manager".to_string(),
                                 colour: (0xF2, 0x72, 0x4A),
                             });
@@ -116,7 +125,7 @@ fn app(cx: Scope) -> Element {
                                         path { d: "M4.5 15.75l7.5-7.5 7.5 7.5", stroke_linejoin: "round", stroke_linecap: "round" }
                                 }}
                             }
-                            PersonaButton { name: persona.name.clone(), colour: persona.colour,
+                            PersonaButton { uuid: persona.uuid, name: persona.name.clone(), colour: persona.colour,
                                 onclick: move |_| persona_index.set(i) }
                         }
 

@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use uuid::Uuid;
 use crate::data::*;
 use crate::colours::*;
 
@@ -20,6 +21,7 @@ pub fn MessageBox(cx: Scope) -> Element {
             for (i, msg) in msgs.read().msgs.iter().enumerate() {
                 // PersonaMessage { msg: msg.msg.clone(), persona: msg.persona.clone() }
                 div {
+                    key: "{msg.uuid}",
                     class: if i == 0 {
                       "flex-col gap-2 mt-auto"
                     } else { "flex-col gap-2" },
@@ -48,14 +50,17 @@ pub fn MessageBox(cx: Scope) -> Element {
 #[component]
 pub fn PersonaButton<'a>(
     cx: Scope,
+    uuid: Uuid,
     name: String,
     colour: Rgb,
     onclick: EventHandler<'a, MouseEvent>,
 ) -> Element {
     cx.render(rsx! {
-        div { class: "flex flex-col items-center w-auto h-auto leading-none",
-            button { onclick: move |evt| onclick.call(evt), PersonaIcon { colour: *colour } }
-            p { class: "text-xs whitespace-nowrap", "{name}" }
+        div {
+          key: "{uuid}",
+          class: "flex flex-col items-center w-auto h-auto leading-none",
+          button { onclick: move |evt| onclick.call(evt), PersonaIcon { colour: *colour } }
+          p { class: "text-xs whitespace-nowrap", "{name}" }
         }
     })
 }

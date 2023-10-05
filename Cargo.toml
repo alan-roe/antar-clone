@@ -10,6 +10,8 @@ dioxus = { path = "../dioxus/packages/dioxus" }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 dioxus-desktop = {path = "../dioxus/packages/desktop" }
+uuid = { version = "1.4.1", features = [ "v4", "fast-rng", "macro-diagnostics" ] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 dioxus-web = { path = "../dioxus/packages/web" }
+uuid = { version = "1.4.1", features = [ "js", "v4", "fast-rng", "macro-diagnostics" ] }
