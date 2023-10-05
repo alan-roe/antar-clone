@@ -1,4 +1,5 @@
 use dioxus::prelude::*;
+use dioxus_signals::Signal;
 use uuid::Uuid;
 use crate::data::*;
 use crate::colours::*;
@@ -12,9 +13,7 @@ fn text_colour_from_bg((r, g, b): Rgb) -> Colour {
 }
 
 #[component]
-pub fn MessageBox(cx: Scope) -> Element {
-    let msgs = use_shared_state::<Messages>(cx).unwrap();
-
+pub fn MessageBox(cx: Scope, msgs: Signal<Messages>) -> Element {
     cx.render(rsx! {
         div {
             class: "flex flex-col flex-grow border rounded-xl p-4 w-full max-w-2xl gap-2 overflow-y-scroll",
@@ -50,14 +49,12 @@ pub fn MessageBox(cx: Scope) -> Element {
 #[component]
 pub fn PersonaButton<'a>(
     cx: Scope,
-    uuid: Uuid,
     name: String,
     colour: Rgb,
     onclick: EventHandler<'a, MouseEvent>,
 ) -> Element {
     cx.render(rsx! {
         div {
-          key: "{uuid}",
           class: "flex flex-col items-center w-auto h-auto leading-none",
           button { onclick: move |evt| onclick.call(evt), PersonaIcon { colour: *colour } }
           p { class: "text-xs whitespace-nowrap", "{name}" }

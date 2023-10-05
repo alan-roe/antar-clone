@@ -5,6 +5,7 @@ mod colours;
 
 use components::*;
 use data::*;
+use dioxus_signals::*;
 use uuid::Uuid;
 
 use std::rc::Rc;
@@ -28,33 +29,29 @@ fn main() {
 }
 
 fn app(cx: Scope) -> Element {
-    use_shared_state_provider(cx, || Messages { msgs: Vec::new() });
-    let msgs = use_shared_state::<Messages>(cx).unwrap();
-    let personas: &UseRef<Personas> = use_ref(cx, || {
+    // Shared State
+    let msgs = use_signal(cx, || Messages { msgs: Vec::new() });
+    let personas = use_signal(cx, || {
         vec![Persona {
             uuid: Uuid::new_v4(),
             name: "Me".to_string(),
             colour: (0x49, 0x55, 0x65),
         }]
     });
-    let input_str = use_state(cx, || "".to_string());
+    let persona_index: Signal<usize> = use_signal(cx, || 0);
 
-    let persona_index: &UseState<usize> = use_state(cx, || 0);
-    let personas_lock = personas.read();
+    // Local State
+    let input_str = use_signal(cx, String::new);
 
-    let scroll_pos = use_state(cx, || 0);
-
-    let send_msg = || {
+    let send_msg = move || {
         msgs.write().msgs.push(Message {
             uuid: Uuid::new_v4(),
             persona: personas
-                .with(|personas| personas.get(*persona_index.current()).unwrap().clone()),
-            msg: (*input_str.current()).clone(),
+                .with(|personas| personas.get(*persona_index.read()).unwrap().clone()),
+            msg: (*input_str.read()).clone(),
         });
         input_str.set("".to_string());
     };
-
-    use_shared_state_provider::<Option<Rc<MountedData>>>(cx, || None);
 
     cx.render(rsx! {
         div { 
@@ -64,27 +61,28 @@ fn app(cx: Scope) -> Element {
                 "Antar Clone" 
             }
             MessageBox {
+                msgs: msgs
             }
             input {
                 class: "flex max-w-2xl p-2 h-auto w-full rounded-xl bg-gray-100 outline-none focus:outline-none",
                 placeholder: "Add message ...",
                 oninput: move |evt| { input_str.set(evt.value.clone()) },
                 onkeyup: move |evt| {
-                    if evt.key() == Key::Enter && !input_str.is_empty() {
+                    if evt.key() == Key::Enter && !input_str.read().is_empty() {
                         send_msg();
                     } else if evt.modifiers() == Modifiers::CONTROL
                         && evt.key() == Key::Character("]".into())
                     {
-                        if *persona_index.current() < personas.with(Vec::len) - 1 {
-                            persona_index.modify(|x| *x + 1);
+                        if *persona_index.read() < personas.with(Vec::len) - 1 {
+                            *persona_index.write() += 1;
                         } else {
                             persona_index.set(0);
                         }
                     } else if evt.modifiers() == Modifiers::CONTROL
                         && evt.key() == Key::Character("[".into())
                     {
-                        if *persona_index.current() > 0 {
-                            persona_index.modify(|x| *x - 1);
+                        if *persona_index.read() > 0 {
+                            *persona_index.write() -= 1;
                         } else {
                             persona_index.set(personas.with(Vec::len)-1)
                         }
@@ -110,10 +108,11 @@ fn app(cx: Scope) -> Element {
                     AddPersonaButton {
                         onclick: move |_| {}
                     }
-                    for (i, persona) in personas_lock.iter().enumerate() {
+                    for (i, persona) in personas.read().iter().enumerate() {
                         div {
+                            key: "{persona.uuid}",
                             class: "flex flex-col justify-center items-center",
-                            if i == *persona_index.get() {
+                            if i == *persona_index.read() {
                                 rsx! {
                                     svg {
                                         view_box: "0 0 24 24",
@@ -125,7 +124,7 @@ fn app(cx: Scope) -> Element {
                                         path { d: "M4.5 15.75l7.5-7.5 7.5 7.5", stroke_linejoin: "round", stroke_linecap: "round" }
                                 }}
                             }
-                            PersonaButton { uuid: persona.uuid, name: persona.name.clone(), colour: persona.colour,
+                            PersonaButton { name: persona.name.clone(), colour: persona.colour,
                                 onclick: move |_| persona_index.set(i) }
                         }
 
@@ -162,7 +161,8 @@ fn SendIcon(cx: Scope) -> Element {
 #[component]
 fn AddPersonaButton<'a>(cx: Scope, onclick: EventHandler<'a, MouseEvent>) -> Element {
     cx.render(rsx! {
-        div { class: "flex flex-col items-center justify-end w-auto h-auto leading-none mr-3",
+        div { 
+            class: "flex flex-col items-center text-black justify-end w-auto h-auto leading-none mr-3",
             button { class: "leading-none", onclick: |evt| onclick.call(evt), AddPersonaIcon {}}
             span { class: "text-xs", "Add" }
         }
