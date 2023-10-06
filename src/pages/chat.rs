@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::components::*;
 use crate::data::*;
 use dioxus::html::input_data::keyboard_types::Key;
@@ -14,6 +16,10 @@ struct ChatData {
     personas: Signal<Personas>,
     persona_index: Signal<usize>,
     current_message: Signal<String>,
+
+    // Add Persona Dialog state
+    new_persona_name: Signal<String>,
+    new_persona_colour: Signal<Rgb>,
 }
 
 impl ChatData {
@@ -21,7 +27,7 @@ impl ChatData {
         self.personas.push(Persona {
             uuid: Uuid::new_v4(),
             name: "Me".to_string(),
-            colour: (0x49, 0x55, 0x65),
+            colour: Rgb(0x49, 0x55, 0x65),
         });
         self
     }
@@ -31,6 +37,7 @@ impl ChatData {
             personas,
             persona_index,
             current_message,
+            ..
         } = self;
         messages.write().msgs.push(Message {
             uuid: Uuid::new_v4(),
@@ -48,12 +55,6 @@ fn use_chat_context(cx: Scope) -> ChatData {
 pub fn Chat(cx: Scope) -> Element {
     // Shared State
     use_context_provider(cx, || ChatData::default().init());
-    let chat_data @ ChatData {
-        messages,
-        personas,
-        persona_index,
-        current_message,
-    } = use_chat_context(cx);
 
     cx.render(rsx! {
         // TODO 3 Row Grid Layout
@@ -63,6 +64,42 @@ pub fn Chat(cx: Scope) -> Element {
             div {MessageBox {}}
             div {MessageInput {}}
             div {BottomBar {}}
+        }
+        AddPersonaDialog{}
+    })
+}
+
+fn AddPersonaDialog(cx: Scope) -> Element {
+    let chat_data @ ChatData {
+        new_persona_name,
+        new_persona_colour,
+        personas,
+        ..
+    } = use_chat_context(cx);
+
+    cx.render(rsx! {
+        dialog {
+            id: "addPersonaDialog",
+            input {
+                placeholder: "Persona Name",
+                oninput: move |evt| { new_persona_name.set(evt.value.clone()) },
+                onkeyup: move |evt| {
+                    if evt.key() == Key::Enter && !new_persona_name.read().is_empty() {
+                        personas.write().push(
+                            Persona {
+                                uuid: Uuid::new_v4(),
+                                name: new_persona_name.read().clone(),
+                                colour: *new_persona_colour.read()
+                            }
+                        );
+                    } 
+                },
+                value: "{new_persona_name.read()}"
+            }
+            input {
+                r#type: "color",
+                onchange: move |evt| new_persona_colour.set(Rgb::from_str(&evt.value).unwrap())
+            }
         }
     })
 }
@@ -137,13 +174,13 @@ fn MessageInput(cx: Scope) -> Element {
                                 .push(Persona {
                                     uuid: Uuid::new_v4(),
                                     name: "Coder".to_string(),
-                                    colour: (0x25, 0x25, 0x25),
+                                    colour: Rgb(0x25, 0x25, 0x25),
                                 });
                             personas
                                 .push(Persona {
                                     uuid: Uuid::new_v4(),
                                     name: "Project Manager".to_string(),
-                                    colour: (0xF2, 0x72, 0x4A),
+                                    colour: Rgb(0xF2, 0x72, 0x4A),
                                 });
                         });
                 }
@@ -163,7 +200,9 @@ fn BottomBar(cx: Scope) -> Element {
         div {
             class: "flex h-auto gap-x-2 w-full max-w-2xl",
             div { class: "flex items-end gap-x-2 h-auto w-full min-w-0 overflow-x-scroll",
-                AddPersonaButton { onclick: move |_| {} }
+                AddPersonaButton { onclick: move |_| {
+                    use_eval(cx)(r#"document.getElementById("addPersonaDialog").showModal();"#).unwrap();
+                } }
                 PersonaSelect {
                 }
             }

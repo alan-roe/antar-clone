@@ -4,11 +4,11 @@ use dioxus::prelude::*;
 use dioxus_signals::Signal;
 use uuid::Uuid;
 
-pub fn text_colour_from_bg((r, g, b): Rgb) -> Colour {
+pub fn text_colour_from_bg(Rgb(r, g, b): Rgb) -> Colour {
     if (u16::from(r) + u16::from(g) + u16::from(b)) >= (255 * 3 / 2) {
-        Colour::Colour((0, 0, 0))
+        Colour::Colour(Rgb(0, 0, 0))
     } else {
-        Colour::Colour((255, 255, 255))
+        Colour::Colour(Rgb(255, 255, 255))
     }
 }
 
@@ -29,11 +29,11 @@ pub fn PersonaButton<'a>(
 
 pub fn PersonaMessage(cx: Scope<Message>) -> Element {
     let text_colour = {
-        let (r, g, b) = cx.props.persona.colour;
+        let Rgb(r, g, b) = cx.props.persona.colour;
         if (u16::from(r) + u16::from(g) + u16::from(b)) >= (255 * 3 / 2) {
-            Colour::Colour((0, 0, 0))
+            Colour::Colour(Rgb(0, 0, 0))
         } else {
-            Colour::Colour((255, 255, 255))
+            Colour::Colour(Rgb(255, 255, 255))
         }
     };
     cx.render(rsx! {
