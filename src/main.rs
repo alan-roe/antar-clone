@@ -3,6 +3,7 @@ mod colours;
 mod components;
 mod data;
 mod pages;
+mod storage;
 
 use components::*;
 use data::*;
@@ -17,6 +18,7 @@ use dioxus::{
 };
 
 use crate::{colours::Colour, pages::chat::Chat};
+use crate::storage::*;
 
 fn main() {
     #[cfg(not(target_arch = "wasm32"))]

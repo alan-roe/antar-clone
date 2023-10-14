@@ -10,6 +10,8 @@ use uuid::Uuid;
 use crate::colours::*;
 use dioxus::prelude::*;
 use dioxus_signals::*;
+use crate::storage::*;
+
 #[derive(Clone, Copy, Default, PartialEq, Props)]
 struct ChatData {
     messages: Signal<Messages>,
@@ -24,11 +26,13 @@ struct ChatData {
 
 impl ChatData {
     fn init(self) -> Self {
-        self.personas.push(Persona {
-            uuid: Uuid::new_v4(),
-            name: "Me".to_string(),
-            colour: Rgb(0x49, 0x55, 0x65),
-        });
+        self.personas.set(get_storage("personas", || Personas(
+            vec![Persona {
+                uuid: Uuid::new_v4(),
+                name: "Me".to_string(),
+                colour: Rgb(0x49, 0x55, 0x65),
+            }]
+        )));
         self
     }
     fn on_send(&self) {
@@ -92,6 +96,7 @@ fn AddPersonaDialog(cx: Scope) -> Element {
                                 colour: *new_persona_colour.read()
                             }
                         );
+                        set_storage("personas", personas)
                     } 
                 },
                 value: "{new_persona_name.read()}"
@@ -154,7 +159,7 @@ fn MessageInput(cx: Scope) -> Element {
                 } else if evt.modifiers() == Modifiers::CONTROL
                     && evt.key() == Key::Character("]".into())
                 {
-                    if *persona_index.read() < personas.with(Vec::len) - 1 {
+                    if *persona_index.read() < personas.with(Personas::count) - 1 {
                         *persona_index.write() += 1;
                     } else {
                         persona_index.set(0);
@@ -165,7 +170,7 @@ fn MessageInput(cx: Scope) -> Element {
                     if *persona_index.read() > 0 {
                         *persona_index.write() -= 1;
                     } else {
-                        persona_index.set(personas.with(Vec::len) - 1)
+                        persona_index.set(personas.with(Personas::count) - 1)
                     }
                 } else if evt.key() == Key::Character("[".into()) {
                     personas

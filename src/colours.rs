@@ -1,6 +1,7 @@
 use std::{fmt::Display, str::FromStr};
+use serde::{Serialize, Deserialize};
 
-#[derive(Clone, Copy, Default, PartialEq)]
+#[derive(Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
 pub struct Rgb(pub u8, pub u8, pub u8);
 
 #[derive(Debug, PartialEq, Eq)]

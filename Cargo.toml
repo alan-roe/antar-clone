@@ -7,12 +7,14 @@ edition = "2021"
 
 [dependencies]
 dioxus = { path = "../dioxus/packages/dioxus" }
-dioxus-signals = { path = "../dioxus/packages/signals" }
+dioxus-signals = { path = "../dioxus/packages/signals", features = ["serde"]}
+gloo-storage = "0.3.0"
+serde = { version = "1.0.189", features = ["derive"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 dioxus-desktop = {path = "../dioxus/packages/desktop" }
-uuid = { version = "1.4.1", features = [ "v4", "fast-rng", "macro-diagnostics" ] }
+uuid = { version = "1.4.1", features = [ "v4", "fast-rng", "macro-diagnostics", "serde" ] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 dioxus-web = { path = "../dioxus/packages/web" }
-uuid = { version = "1.4.1", features = [ "js", "v4", "fast-rng", "macro-diagnostics" ] }
+uuid = { version = "1.4.1", features = [ "js", "v4", "fast-rng", "macro-diagnostics", "serde" ] }
