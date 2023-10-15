@@ -69,11 +69,11 @@ pub fn Chat(cx: Scope) -> Element {
             div {MessageInput {}}
             div {BottomBar {}}
         }
-        AddPersonaDialog{}
+        AddNewPersonaDialog{}
     })
 }
 
-fn AddPersonaDialog(cx: Scope) -> Element {
+fn AddNewPersonaDialog(cx: Scope) -> Element {
     let chat_data @ ChatData {
         new_persona_name,
         new_persona_colour,
@@ -81,29 +81,68 @@ fn AddPersonaDialog(cx: Scope) -> Element {
         ..
     } = use_chat_context(cx);
 
+    let add_persona = move || {
+        personas.write().push(
+            Persona {
+                uuid: Uuid::new_v4(),
+                name: new_persona_name.read().clone(),
+                colour: *new_persona_colour.read()
+            }
+        );
+        set_storage("personas", personas);
+        use_eval(cx)(r#"document.getElementById("addPersonaDialog").close();"#).unwrap();
+    };
+
     cx.render(rsx! {
         dialog {
             id: "addPersonaDialog",
-            input {
-                placeholder: "Persona Name",
-                oninput: move |evt| { new_persona_name.set(evt.value.clone()) },
-                onkeyup: move |evt| {
-                    if evt.key() == Key::Enter && !new_persona_name.read().is_empty() {
-                        personas.write().push(
-                            Persona {
-                                uuid: Uuid::new_v4(),
-                                name: new_persona_name.read().clone(),
-                                colour: *new_persona_colour.read()
-                            }
-                        );
-                        set_storage("personas", personas)
-                    } 
-                },
-                value: "{new_persona_name.read()}"
+            class: "p-4 pt-7 rounded-2xl",
+            // div within dialog to prevent display: flex causing dialog to show even when not open
+            div {
+                class: "flex flex-col gap-2",
+                input {
+                    placeholder: "Persona Name",
+                    oninput: move |evt| { new_persona_name.set(evt.value.clone()) },
+                    onkeyup: move |evt| {
+                        if evt.key() == Key::Enter && !new_persona_name.read().is_empty() {
+                            add_persona()
+                        } 
+                    },
+                    value: "{new_persona_name.read()}"
+                }
+                div {
+                    class: "flex flex-col gap-0",
+                    "Choose a colour: "
+                    input {
+                        r#type: "color",
+                        onchange: move |evt| new_persona_colour.set(Rgb::from_str(&evt.value).unwrap())
+                    }
+                }
+                button {
+                    class: "w-full bg-gray-950 hover:bg-gray-800 text-white font-bold py-2 px-4 shadow rounded-xl",
+                    onclick: move |_| add_persona(),
+                    AddNewPersonaButton{}
+                }
             }
-            input {
-                r#type: "color",
-                onchange: move |evt| new_persona_colour.set(Rgb::from_str(&evt.value).unwrap())
+            
+        }
+    })
+}
+
+#[component]
+fn AddNewPersonaButton(cx: Scope) -> Element {
+    cx.render(rsx! {
+        div {
+            class: "flex justify-between",
+            div {"Add Persona",}
+            svg {
+                view_box: "0 0 24 24",
+                xmlns: "http://www.w3.org/2000/svg",
+                stroke_width: "1.5",
+                fill: "none",
+                stroke: "currentColor",
+                class: "w-6 h-6",
+                path { stroke_linecap: "round", stroke_linejoin: "round", d: "M4.5 12.75l6 6 9-13.5" }
             }
         }
     })
