@@ -1,5 +1,5 @@
+use serde::{Deserialize, Serialize};
 use std::{fmt::Display, str::FromStr};
-use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
 pub struct Rgb(pub u8, pub u8, pub u8);
@@ -26,7 +26,7 @@ impl FromStr for Rgb {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub enum Colour {
     Colour(Rgb),
     BgColour(Rgb),

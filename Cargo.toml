@@ -9,6 +9,7 @@ edition = "2021"
 dioxus = { path = "../dioxus/packages/dioxus" }
 dioxus-signals = { path = "../dioxus/packages/signals", features = ["serde"]}
 gloo-storage = "0.3.0"
+indexmap = { version = "2.0.2", features = ["serde"] }
 serde = { version = "1.0.189", features = ["derive"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

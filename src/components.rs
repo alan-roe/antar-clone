@@ -1,5 +1,6 @@
 use crate::colours::*;
 use crate::data::*;
+use crate::pages::chat::{use_chat_context, ChatData};
 use dioxus::prelude::*;
 use dioxus_signals::Signal;
 use uuid::Uuid;
@@ -23,32 +24,6 @@ pub fn PersonaButton<'a>(
         div { class: "flex flex-col items-center w-auto h-auto leading-none",
             button { onclick: move |evt| onclick.call(evt), PersonaIcon { colour: *colour } }
             p { class: "text-xs whitespace-nowrap", "{name}" }
-        }
-    })
-}
-
-pub fn PersonaMessage(cx: Scope<Message>) -> Element {
-    let text_colour = {
-        let Rgb(r, g, b) = cx.props.persona.colour;
-        if (u16::from(r) + u16::from(g) + u16::from(b)) >= (255 * 3 / 2) {
-            Colour::Colour(Rgb(0, 0, 0))
-        } else {
-            Colour::Colour(Rgb(255, 255, 255))
-        }
-    };
-    cx.render(rsx! {
-        div { class: "flex-col gap-2",
-            div { class: "flex items-center",
-                PersonaIcon { colour: cx.props.persona.colour }
-                span { "{cx.props.persona.name}" }
-            }
-            div {
-                class: "rounded-lg px-2 py-1 w-fit",
-                style: r"
-              {Colour::BgColour(cx.props.persona.colour)};
-              {text_colour};",
-                span { "{cx.props.msg}" }
-            }
         }
     })
 }

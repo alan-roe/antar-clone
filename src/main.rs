@@ -17,8 +17,8 @@ use dioxus::{
     prelude::*,
 };
 
-use crate::{colours::Colour, pages::chat::Chat};
 use crate::storage::*;
+use crate::{colours::Colour, pages::chat::ChatPage};
 
 fn main() {
     #[cfg(not(target_arch = "wasm32"))]
@@ -32,6 +32,9 @@ fn main() {
 }
 
 fn app(cx: Scope) -> Element {
+    AppData::load(cx);
+    let app_data = Signal::new(AppData::use_app_context(cx));
+
     cx.render(rsx! {
         div { 
             class: "grid font-sans gap-y-2 min-h-screen min-w-full max-h-screen max-w-full bg-gray-50 items-center",
@@ -40,7 +43,7 @@ fn app(cx: Scope) -> Element {
             // TODO Router for different pages
             div {
                 class: "w-full max-w-2xl h-full mx-auto",
-                Chat {}
+                ChatPage {}
             }
         }
     })

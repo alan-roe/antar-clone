@@ -46,6 +46,7 @@ dependencies = [
  "dioxus-signals",
  "dioxus-web",
  "gloo-storage",
+ "indexmap",
  "serde",
  "uuid",
 ]
@@ -1412,6 +1413,7 @@ checksum = "8adf3ddd720272c6ea8bf59463c04e0f93d0bbf7c5439b691bca2987e0270897"
 dependencies = [
  "equivalent",
  "hashbrown 0.14.1",
+ "serde",
 ]
 
 [[package]]
