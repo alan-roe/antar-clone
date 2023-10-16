@@ -2,7 +2,7 @@ use crate::colours::{Colour, Rgb};
 use crate::storage::*;
 use dioxus::prelude::*;
 use dioxus_signals::Signal;
-use indexmap::{indexmap, IndexMap};
+use indexmap::{indexmap, IndexMap, indexset, IndexSet};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -13,8 +13,24 @@ pub struct AppData {
 }
 
 impl AppData {
-    pub fn use_app_context(cx: Scope) -> AppData {
+    fn use_app_context(cx: &ScopeState) -> AppData {
         *use_context(cx).expect("no app context provided, must be loaded first")
+    }
+
+    pub fn personas(cx: &ScopeState) -> Signal<Personas> {
+        AppData::use_app_context(cx).personas
+    }
+
+    pub fn chats(cx: &ScopeState) -> Signal<Chats> {
+        AppData::use_app_context(cx).chats
+    }
+
+    pub fn save_personas(cx: &ScopeState) {
+        set_storage("ifs_personas", AppData::use_app_context(cx).personas)
+    }
+
+    pub fn save_chats(cx: &ScopeState) {
+        set_storage("ifs_chats", AppData::use_app_context(cx).chats)
     }
 
     pub fn load(cx: Scope) {
@@ -31,19 +47,44 @@ impl AppData {
 
         app_context
             .chats
-            .set(get_storage("ifs_chats", move || Chats(Vec::default())))
+            .set(get_storage("ifs_chats", move || {
+                let active_persona = *app_context.personas.read().get_index(0).unwrap().0;
+                Chats(indexmap!{Uuid::new_v4() => Chat {
+                    messages: Default::default(),
+                    active_persona: Signal::new_in_scope(active_persona, cx.scope_id()),
+                    added_personas: Signal::new_in_scope(indexset!{active_persona}, cx.scope_id()),
+                    current_message: Signal::new_in_scope(String::new(), cx.scope_id())
+                }})}
+            ))
     }
 }
 
 #[derive(Clone, Default, Serialize, Deserialize)]
-pub struct Chats(Vec<Chat>);
+pub struct Chats(IndexMap<Uuid, Chat>);
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+impl Chats {
+    pub fn get_index(&self, index: usize) -> Option<(&Uuid, &Chat)> {
+        self.0.get_index(index)
+    }
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Props)]
 pub struct Chat {
-    messages: Messages,
-    active_persona: Option<Uuid>,
-    added_personas: Vec<Uuid>,
-    current_message: Message,
+    pub messages: Signal<Messages>,
+    pub active_persona: Signal<Uuid>,
+    pub added_personas: Signal<IndexSet<Uuid>>,
+    pub current_message: Signal<String>,
+}
+
+impl Chat {
+    pub fn send(&self) {
+        self.messages.write().msgs.push(Message {
+            uuid: Uuid::new_v4(),
+            msg: self.current_message.read().clone(),
+            persona: *self.active_persona.read()
+        });
+        self.current_message.set(String::new())
+    }
 }
 
 #[derive(Clone, Default, PartialEq, Props, Serialize, Deserialize)]
@@ -81,12 +122,13 @@ impl Personas {
     }
 }
 
-#[derive(Clone, Default, PartialEq, Props, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Props, Serialize, Deserialize)]
 pub struct Message {
     pub uuid: Uuid,
     pub msg: String,
     pub persona: Uuid,
 }
+
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct Messages {
     pub msgs: Vec<Message>,

@@ -33,8 +33,7 @@ fn main() {
 
 fn app(cx: Scope) -> Element {
     AppData::load(cx);
-    let app_data = Signal::new(AppData::use_app_context(cx));
-
+    
     cx.render(rsx! {
         div { 
             class: "grid font-sans gap-y-2 min-h-screen min-w-full max-h-screen max-w-full bg-gray-50 items-center",
@@ -43,7 +42,9 @@ fn app(cx: Scope) -> Element {
             // TODO Router for different pages
             div {
                 class: "w-full max-w-2xl h-full mx-auto",
-                ChatPage {}
+                ChatPage {
+                    chat: *AppData::chats(cx).read().get_index(0).unwrap().1
+                }
             }
         }
     })

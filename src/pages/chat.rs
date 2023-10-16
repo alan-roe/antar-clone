@@ -16,7 +16,6 @@ use dioxus_signals::*;
 #[derive(Clone, Copy, Default, PartialEq, Props)]
 pub struct ChatData {
     messages: Signal<Messages>,
-    pub personas: Signal<Personas>,
     active_persona: Signal<Uuid>,
     current_message: Signal<String>,
 
@@ -26,22 +25,9 @@ pub struct ChatData {
 }
 
 impl ChatData {
-    fn init(self) -> Self {
-        self.personas.set(get_storage("personas", || {
-            Personas(indexmap! {Uuid::new_v4() => Persona {
-                name: "Me".to_string(),
-                colour: Rgb(0x49, 0x55, 0x65),
-            }})
-        }));
-
-        self.active_persona
-            .set(*self.personas.read().get_index(0).unwrap().0);
-        self
-    }
     fn on_send(&self) {
         let Self {
             messages,
-            personas,
             active_persona,
             current_message,
             ..
@@ -55,30 +41,39 @@ impl ChatData {
     }
 }
 
-pub fn use_chat_context(cx: Scope) -> ChatData {
+pub fn use_chat_context(cx: &ScopeState) -> ChatData {
     *use_context(cx).expect("no chat context provided")
 }
 
 #[component]
-pub fn ChatPage(cx: Scope) -> Element {
+pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
     // Shared State
-    use_context_provider(cx, || ChatData::default().init());
-
+    use_context_provider(cx, ChatData::default);
+    use_chat_context(cx).active_persona.set(*AppData::personas(cx).read().get_index(0).unwrap().0);
+    
     cx.render(rsx! {
         // TODO 3 Row Grid Layout
         div {
             class: "grid grid-rows-3 h-full w-full",
             style: "grid-template-rows: minmax(0, 1fr) auto auto;",
-            div {MessageBox {}}
-            div {MessageInput {}}
-            div {BottomBar {}}
+            div {MessageBox {
+                chat: *chat
+            }}
+            div {MessageInput {
+                chat: *chat
+            }}
+            div {BottomBar {
+                chat: *chat
+            }}
         }
-        AddPersonaDialog {}
+        AddPersonaDialog {chat: *chat}
     })
 }
 
-fn AddPersonaDialog(cx: Scope) -> Element {
-    let chat_data @ ChatData { personas, .. } = use_chat_context(cx);
+#[component]
+fn AddPersonaDialog(cx: Scope, chat: Chat) -> Element {
+    let Chat {added_personas, ..} = chat;
+    let personas = AppData::personas(cx);
     cx.render(rsx! {
         dialog {
             id: "addPersonaDialog",
@@ -100,18 +95,20 @@ fn AddPersonaDialog(cx: Scope) -> Element {
                 }
                 div {
                     class: "grid grid-cols-3 gap-4 max-w-full w-auto",
-                    for (uuid, persona) in personas.read().iter() {
+                    personas.read().iter().map (|(uuid, persona)| {
+                        let uuid = *uuid;
                         rsx! {
-                            div {
+                            button {
                                 key: "{uuid}",
                                 class: "grid grid-rows-2 w-auto h-auto place-content-center place-items-center", 
+                                onclick: move |_| { added_personas.write().insert(uuid); },
                                 PersonaIcon {
                                     colour: persona.colour
                                 },
                                 "{persona.name}"
                             }
                         }
-                    }
+                    })
                 }}
         }
         AddNewPersonaDialog{}
@@ -119,19 +116,17 @@ fn AddPersonaDialog(cx: Scope) -> Element {
 }
 
 fn AddNewPersonaDialog(cx: Scope) -> Element {
-    let chat_data @ ChatData {
-        new_persona_name,
-        new_persona_colour,
-        personas,
-        ..
-    } = use_chat_context(cx);
+    let new_persona_name = use_state(cx, String::new);
+    let new_persona_colour = use_state(cx, Rgb::default);
+
+    let personas = AppData::personas(cx);
 
     let add_persona = move || {
-        personas.write().push(Persona {
-            name: new_persona_name.read().clone(),
-            colour: *new_persona_colour.read(),
-        });
-        set_storage("personas", personas);
+        personas.with_mut(|personas| personas.push(Persona {
+            name: new_persona_name.get().clone(),
+            colour: *new_persona_colour.get(),
+        }));
+        AppData::save_personas(cx);
         use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#).unwrap();
     };
 
@@ -146,11 +141,11 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
                     placeholder: "Persona Name",
                     oninput: move |evt| { new_persona_name.set(evt.value.clone()) },
                     onkeyup: move |evt| {
-                        if evt.key() == Key::Enter && !new_persona_name.read().is_empty() {
+                        if evt.key() == Key::Enter && !new_persona_name.get().is_empty() {
                             add_persona()
                         } 
                     },
-                    value: "{new_persona_name.read()}"
+                    value: "{new_persona_name.get()}"
                 }
                 div {
                     class: "flex flex-col gap-0",
@@ -191,10 +186,10 @@ fn AddNewPersonaButton(cx: Scope) -> Element {
 }
 
 #[component]
-pub fn MessageBox(cx: Scope) -> Element {
-    let ChatData {
-        messages, personas, ..
-    } = use_chat_context(cx);
+pub fn MessageBox(cx: Scope, chat: Chat) -> Element {
+    let Chat {messages, ..} = chat;
+    let personas = AppData::personas(cx);
+
     cx.render(rsx! {
         div { class: "flex flex-col flex-grow border rounded-xl p-4 min-h-full w-full max-w-2xl gap-2 max-h-full overflow-y-scroll",
             for (i , msg) in messages.read().msgs.iter().enumerate() {
@@ -227,13 +222,11 @@ pub fn MessageBox(cx: Scope) -> Element {
     })
 }
 
-fn MessageInput(cx: Scope) -> Element {
-    let chat_data @ ChatData {
-        current_message,
-        active_persona,
-        personas,
-        ..
-    } = use_chat_context(cx);
+#[component]
+fn MessageInput(cx: Scope, chat: Chat) -> Element {
+    let Chat {current_message, active_persona, added_personas, ..} = *chat;
+    let personas = AppData::personas(cx);
+
     cx.render(rsx!{
         input {
             id: "messageInput",
@@ -241,38 +234,41 @@ fn MessageInput(cx: Scope) -> Element {
             placeholder: "Add message ...",
             oninput: move |evt| { current_message.set(evt.value.clone()) },
             onkeyup: move |evt| {
-                let persona_index = personas.read().get_index_of(&active_persona.read()).unwrap();
+                let persona_index = added_personas.read().iter().position(|r| *active_persona.read() == *r).unwrap();
                 if evt.key() == Key::Enter && !current_message.read().is_empty() {
-                    chat_data.on_send();
+                    chat.send();
                 } else if evt.modifiers() == Modifiers::CONTROL
                     && evt.key() == Key::Character("]".into())
                 {
                     if persona_index < personas.with(Personas::count) - 1 {
-                        active_persona.set(*personas.read().get_index(persona_index+1).unwrap().0);
+                        active_persona.set(*added_personas.read().get_index(persona_index+1).unwrap());
                     } else {
-                        active_persona.set(*personas.read().get_index(0).unwrap().0);
+                        active_persona.set(*added_personas.read().get_index(0).unwrap());
                     }
                 } else if evt.modifiers() == Modifiers::CONTROL
                     && evt.key() == Key::Character("[".into())
                 {
                     if persona_index > 0 {
-                        active_persona.set(*personas.read().get_index(persona_index-1).unwrap().0);
+                        active_persona.set(*added_personas.read().get_index(persona_index-1).unwrap());
                     } else {
-                        active_persona.set(*personas.read().get_index(personas.with(|personas| personas.count()-1)).unwrap().0);
+                        active_persona.set(*added_personas.read().get_index(added_personas.with(|personas| personas.len()-1)).unwrap());
                     }
                 }
             },
-            value: "{current_message.to_string()}"
+            value: "{current_message}"
         }
     })
 }
 
-fn BottomBar(cx: Scope) -> Element {
-    let chat_data @ ChatData {
+#[component]
+fn BottomBar(cx: Scope, chat: Chat) -> Element {
+    let Chat {
         active_persona,
-        personas,
         ..
-    } = use_chat_context(cx);
+    } = chat;
+    
+    let personas = AppData::personas(cx);
+
     cx.render(rsx!{
         div {
             class: "flex h-auto gap-x-2 w-full max-w-2xl",
@@ -281,6 +277,7 @@ fn BottomBar(cx: Scope) -> Element {
                     use_eval(cx)(r#"document.getElementById("addPersonaDialog").showModal();"#).unwrap();
                 } }
                 PersonaSelect {
+                    chat: *chat
                 }
             }
             button {
@@ -291,48 +288,76 @@ fn BottomBar(cx: Scope) -> Element {
     })
 }
 
-fn PersonaSelect(cx: Scope) -> Element {
-    let ChatData {
-        personas,
-        active_persona,
-        ..
-    } = use_chat_context(cx);
+#[component]
+fn PersonaSelect(cx: Scope, chat: Chat) -> Element {
+    let Chat {active_persona, added_personas, ..} = chat;
+    let personas = AppData::personas(cx);
+
     cx.render(rsx!{
-        personas.read().iter().map({ |(uuid, persona)|{
-            let x = 0;
-            rsx! {
-                div {}
-            }
-        }
-        })
-
-    personas.read().iter().map( |(uuid, persona)| { 
-        let uuid = *uuid;
-
+    
+    added_personas.read().iter().map(|uuid| {
         rsx! {
-        div { key: "{uuid}", class: "flex flex-col justify-center items-center",
-            if active_persona.read().eq(&uuid) {
+            if let Some(persona) = personas.read().get(uuid) {
+                let uuid = *uuid;
+
                 rsx! {
-                    svg {
-                        view_box: "0 0 24 24",
-                        stroke: "currentColor",
-                        stroke_width: "2",
-                        fill: "none",
-                        xmlns: "http://www.w3.org/2000/svg",
-                        class: "w-4 h-4",
-                        path { d: "M4.5 15.75l7.5-7.5 7.5 7.5", stroke_linejoin: "round", stroke_linecap: "round" }
-                }}
-            }
-                rsx!{
-                    PersonaButton {
-                    name: persona.name.clone(),
-                    colour: persona.colour,
-                    onclick: move |_| {
-                        active_persona.set(uuid);
-                        use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+                    div { key: "{uuid}", class: "flex flex-col justify-center items-center",
+                        if active_persona.read().eq(&uuid) {
+                            rsx! {
+                                svg {
+                                    view_box: "0 0 24 24",
+                                    stroke: "currentColor",
+                                    stroke_width: "2",
+                                    fill: "none",
+                                    xmlns: "http://www.w3.org/2000/svg",
+                                    class: "w-4 h-4",
+                                    path { d: "M4.5 15.75l7.5-7.5 7.5 7.5", stroke_linejoin: "round", stroke_linecap: "round" }
+                            }}
+                        }
+                            rsx!{
+                                PersonaButton {
+                                name: persona.name.clone(),
+                                colour: persona.colour,
+                                onclick: move |_| {
+                                    active_persona.set(uuid);
+                                    use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
-    }})})
+    })
+        // personas.read().iter().map( |(uuid, persona)| { 
+        //     let uuid = *uuid;
+
+        //     rsx! {
+        //         div { key: "{uuid}", class: "flex flex-col justify-center items-center",
+        //             if active_persona.read().eq(&uuid) {
+        //                 rsx! {
+        //                     svg {
+        //                         view_box: "0 0 24 24",
+        //                         stroke: "currentColor",
+        //                         stroke_width: "2",
+        //                         fill: "none",
+        //                         xmlns: "http://www.w3.org/2000/svg",
+        //                         class: "w-4 h-4",
+        //                         path { d: "M4.5 15.75l7.5-7.5 7.5 7.5", stroke_linejoin: "round", stroke_linecap: "round" }
+        //                 }}
+        //             }
+        //                 rsx!{
+        //                     PersonaButton {
+        //                     name: persona.name.clone(),
+        //                     colour: persona.colour,
+        //                     onclick: move |_| {
+        //                         active_persona.set(uuid);
+        //                         use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // })
+    })
 }
