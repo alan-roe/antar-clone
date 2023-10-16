@@ -69,6 +69,49 @@ pub fn Chat(cx: Scope) -> Element {
             div {MessageInput {}}
             div {BottomBar {}}
         }
+        AddPersonaDialog {}
+    })
+}
+
+fn AddPersonaDialog(cx: Scope) -> Element {
+    let chat_data@ChatData {
+        personas,
+        ..
+    } = use_chat_context(cx);
+    cx.render(rsx! {
+        dialog {
+            id: "addPersonaDialog",
+            class: "p-4 pt-7, rounded-2xl max-w-full",
+            div {
+                class: "flex flex-col gap-2",
+                div {
+                    class: "grid grid-cols-2 place-content-between",
+                    "My Personas",
+                    button {
+                        class: "bg-gray-300",
+                        onclick: move |_| {
+                            use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").showModal();"#).unwrap();
+                            use_eval(cx)(r#"document.getElementById("addPersonaDialog").close();"#).unwrap();
+
+                        },
+                        "Add New"
+                    }
+                }
+                div {
+                    class: "grid grid-cols-3 gap-4 max-w-full w-auto",
+                    for persona in personas.read().iter() {
+                        rsx! {
+                            div {
+                                class: "grid grid-rows-2 w-auto h-auto place-content-center place-items-center", 
+                                PersonaIcon {
+                                    colour: persona.colour
+                                },
+                                "{persona.name}"
+                            }
+                        }
+                    }
+                }}
+        }
         AddNewPersonaDialog{}
     })
 }
@@ -90,12 +133,12 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
             }
         );
         set_storage("personas", personas);
-        use_eval(cx)(r#"document.getElementById("addPersonaDialog").close();"#).unwrap();
+        use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#).unwrap();
     };
 
     cx.render(rsx! {
         dialog {
-            id: "addPersonaDialog",
+            id: "addNewPersonaDialog",
             class: "p-4 pt-7 rounded-2xl",
             // div within dialog to prevent display: flex causing dialog to show even when not open
             div {
