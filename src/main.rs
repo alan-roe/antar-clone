@@ -3,7 +3,6 @@ mod colours;
 mod components;
 mod data;
 mod pages;
-mod storage;
 
 use components::*;
 use data::*;
@@ -17,7 +16,6 @@ use dioxus::{
     prelude::*,
 };
 
-use crate::storage::*;
 use crate::{colours::Colour, pages::chat::ChatPage};
 
 fn main() {
@@ -28,23 +26,24 @@ fn main() {
             .with_custom_head(r#"<link rel="stylesheet" href="public/tailwind.css">"#.to_string()),
     );
     #[cfg(target_arch = "wasm32")]
-    dioxus_web::launch(app);
+    {
+        wasm_logger::init(wasm_logger::Config::default());
+        console_error_panic_hook::set_once();
+        dioxus_web::launch(app);
+    }
 }
 
 fn app(cx: Scope) -> Element {
     AppData::load(cx);
-    
+
     cx.render(rsx! {
-        div { 
+        div {
             class: "grid font-sans gap-y-2 min-h-screen min-w-full max-h-screen max-w-full bg-gray-50 items-center",
             style: "grid-template-rows: auto minmax(0, 1fr);",
             h1 { class: "text-4xl font-bold underline mx-auto mb-auto", "Antar Clone" }
             // TODO Router for different pages
-            div {
-                class: "w-full max-w-2xl h-full mx-auto",
-                ChatPage {
-                    chat: *AppData::chats(cx).read().get_index(0).unwrap().1
-                }
+            div { class: "w-full max-w-2xl h-full mx-auto",
+                ChatPage { chat: *AppData::chats(cx).read().get_index(0).unwrap().1 }
             }
         }
     })

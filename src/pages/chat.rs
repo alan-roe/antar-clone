@@ -5,96 +5,49 @@ use crate::data::*;
 use dioxus::html::input_data::keyboard_types::Key;
 use dioxus::html::input_data::keyboard_types::KeyboardEvent;
 use dioxus::html::input_data::keyboard_types::Modifiers;
-use indexmap::indexmap;
+use indexmap::{indexmap, IndexSet};
 use uuid::Uuid;
 
 use crate::colours::*;
-use crate::storage::*;
 use dioxus::prelude::*;
 use dioxus_signals::*;
 
-#[derive(Clone, Copy, Default, PartialEq, Props)]
-pub struct ChatData {
-    messages: Signal<Messages>,
-    active_persona: Signal<Uuid>,
-    current_message: Signal<String>,
-
-    // Add Persona Dialog state
-    new_persona_name: Signal<String>,
-    new_persona_colour: Signal<Rgb>,
-}
-
-impl ChatData {
-    fn on_send(&self) {
-        let Self {
-            messages,
-            active_persona,
-            current_message,
-            ..
-        } = self;
-        messages.write().msgs.push(Message {
-            uuid: Uuid::new_v4(),
-            persona: *active_persona.read(),
-            msg: (*current_message.read()).clone(),
-        });
-        current_message.set("".to_string());
-    }
-}
-
-pub fn use_chat_context(cx: &ScopeState) -> ChatData {
-    *use_context(cx).expect("no chat context provided")
-}
-
 #[component]
 pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
-    // Shared State
-    use_context_provider(cx, ChatData::default);
-    use_chat_context(cx).active_persona.set(*AppData::personas(cx).read().get_index(0).unwrap().0);
-    
     cx.render(rsx! {
         // TODO 3 Row Grid Layout
         div {
             class: "grid grid-rows-3 h-full w-full",
             style: "grid-template-rows: minmax(0, 1fr) auto auto;",
-            div {MessageBox {
-                chat: *chat
-            }}
-            div {MessageInput {
-                chat: *chat
-            }}
-            div {BottomBar {
-                chat: *chat
-            }}
+            div { MessageBox { chat: *chat } }
+            div { MessageInput { chat: *chat } }
+            div { BottomBar { chat: *chat } }
         }
-        AddPersonaDialog {chat: *chat}
+        AddPersonaDialog { chat: *chat }
+        AddNewPersonaDialog {}
     })
 }
 
 #[component]
 fn AddPersonaDialog(cx: Scope, chat: Chat) -> Element {
-    let Chat {added_personas, ..} = chat;
+    let Chat { added_personas, .. } = chat;
     let personas = AppData::personas(cx);
     cx.render(rsx! {
-        dialog {
-            id: "addPersonaDialog",
-            class: "p-4 pt-7, rounded-2xl max-w-full",
-            div {
-                class: "flex flex-col gap-2",
-                div {
-                    class: "grid grid-cols-2 place-content-between",
-                    "My Personas",
+        dialog { id: "addPersonaDialog", class: "p-4 pt-7, rounded-2xl max-w-full",
+            div { class: "flex flex-col gap-2",
+                div { class: "grid grid-cols-2 place-content-between",
+                    "My Personas"
                     button {
                         class: "bg-gray-300",
                         onclick: move |_| {
-                            use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").showModal();"#).unwrap();
+                            use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").showModal();"#)
+                                .unwrap();
                             use_eval(cx)(r#"document.getElementById("addPersonaDialog").close();"#).unwrap();
-
                         },
                         "Add New"
                     }
                 }
-                div {
-                    class: "grid grid-cols-3 gap-4 max-w-full w-auto",
+                div { class: "grid grid-cols-3 gap-4 max-w-full w-auto",
                     personas.read().iter().map (|(uuid, persona)| {
                         let uuid = *uuid;
                         rsx! {
@@ -109,46 +62,44 @@ fn AddPersonaDialog(cx: Scope, chat: Chat) -> Element {
                             }
                         }
                     })
-                }}
+                }
+            }
         }
-        AddNewPersonaDialog{}
     })
 }
 
+#[component]
 fn AddNewPersonaDialog(cx: Scope) -> Element {
     let new_persona_name = use_state(cx, String::new);
-    let new_persona_colour = use_state(cx, Rgb::default);
+    let new_persona_colour: &UseState<Rgb> = use_state(cx, Rgb::default);
 
     let personas = AppData::personas(cx);
 
     let add_persona = move || {
-        personas.with_mut(|personas| personas.push(Persona {
-            name: new_persona_name.get().clone(),
-            colour: *new_persona_colour.get(),
-        }));
-        AppData::save_personas(cx);
+        personas.with_mut(|personas| {
+            personas.push(Persona {
+                name: new_persona_name.current().to_string(),
+                colour: *new_persona_colour.current(),
+            })
+        });
         use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#).unwrap();
     };
 
     cx.render(rsx! {
-        dialog {
-            id: "addNewPersonaDialog",
-            class: "p-4 pt-7 rounded-2xl",
+        dialog { id: "addNewPersonaDialog", class: "p-4 pt-7 rounded-2xl",
             // div within dialog to prevent display: flex causing dialog to show even when not open
-            div {
-                class: "flex flex-col gap-2",
+            div { class: "flex flex-col gap-2",
                 input {
                     placeholder: "Persona Name",
                     oninput: move |evt| { new_persona_name.set(evt.value.clone()) },
                     onkeyup: move |evt| {
-                        if evt.key() == Key::Enter && !new_persona_name.get().is_empty() {
+                        if evt.key() == Key::Enter && !new_persona_name.current().is_empty() {
                             add_persona()
-                        } 
+                        }
                     },
-                    value: "{new_persona_name.get()}"
+                    value: "{new_persona_name.current()}"
                 }
-                div {
-                    class: "flex flex-col gap-0",
+                div { class: "flex flex-col gap-0",
                     "Choose a colour: "
                     input {
                         r#type: "color",
@@ -158,10 +109,9 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
                 button {
                     class: "w-full bg-gray-950 hover:bg-gray-800 text-white font-bold py-2 px-4 shadow rounded-xl",
                     onclick: move |_| add_persona(),
-                    AddNewPersonaButton{}
+                    AddNewPersonaButton {}
                 }
             }
-            
         }
     })
 }
@@ -169,9 +119,8 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
 #[component]
 fn AddNewPersonaButton(cx: Scope) -> Element {
     cx.render(rsx! {
-        div {
-            class: "flex justify-between",
-            div {"Add Persona",}
+        div { class: "flex justify-between",
+            div { "Add Persona" }
             svg {
                 view_box: "0 0 24 24",
                 xmlns: "http://www.w3.org/2000/svg",
@@ -187,7 +136,7 @@ fn AddNewPersonaButton(cx: Scope) -> Element {
 
 #[component]
 pub fn MessageBox(cx: Scope, chat: Chat) -> Element {
-    let Chat {messages, ..} = chat;
+    let Chat { messages, .. } = chat;
     let personas = AppData::personas(cx);
 
     cx.render(rsx! {
@@ -224,7 +173,12 @@ pub fn MessageBox(cx: Scope, chat: Chat) -> Element {
 
 #[component]
 fn MessageInput(cx: Scope, chat: Chat) -> Element {
-    let Chat {current_message, active_persona, added_personas, ..} = *chat;
+    let Chat {
+        current_message,
+        active_persona,
+        added_personas,
+        ..
+    } = *chat;
     let personas = AppData::personas(cx);
 
     cx.render(rsx!{
@@ -234,14 +188,19 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
             placeholder: "Add message ...",
             oninput: move |evt| { current_message.set(evt.value.clone()) },
             onkeyup: move |evt| {
-                let persona_index = added_personas.read().iter().position(|r| *active_persona.read() == *r).unwrap();
+                let persona_index = added_personas
+                    .read()
+                    .iter()
+                    .position(|r| *active_persona.read() == *r)
+                    .unwrap();
                 if evt.key() == Key::Enter && !current_message.read().is_empty() {
                     chat.send();
                 } else if evt.modifiers() == Modifiers::CONTROL
                     && evt.key() == Key::Character("]".into())
                 {
-                    if persona_index < personas.with(Personas::count) - 1 {
-                        active_persona.set(*added_personas.read().get_index(persona_index+1).unwrap());
+                    if persona_index < added_personas.with(IndexSet::len) - 1 {
+                        active_persona
+                            .set(*added_personas.read().get_index(persona_index + 1).unwrap());
                     } else {
                         active_persona.set(*added_personas.read().get_index(0).unwrap());
                     }
@@ -249,9 +208,16 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
                     && evt.key() == Key::Character("[".into())
                 {
                     if persona_index > 0 {
-                        active_persona.set(*added_personas.read().get_index(persona_index-1).unwrap());
+                        active_persona
+                            .set(*added_personas.read().get_index(persona_index - 1).unwrap());
                     } else {
-                        active_persona.set(*added_personas.read().get_index(added_personas.with(|personas| personas.len()-1)).unwrap());
+                        active_persona
+                            .set(
+                                *added_personas
+                                    .read()
+                                    .get_index(added_personas.with(|personas| personas.len() - 1))
+                                    .unwrap(),
+                            );
                     }
                 }
             },
@@ -262,26 +228,21 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
 
 #[component]
 fn BottomBar(cx: Scope, chat: Chat) -> Element {
-    let Chat {
-        active_persona,
-        ..
-    } = chat;
-    
+    let Chat { active_persona, .. } = chat;
+
     let personas = AppData::personas(cx);
 
     cx.render(rsx!{
-        div {
-            class: "flex h-auto gap-x-2 w-full max-w-2xl",
+        div { class: "flex h-auto gap-x-2 w-full max-w-2xl",
             div { class: "flex items-end gap-x-2 h-auto w-full min-w-0 overflow-x-scroll",
-                AddPersonaButton { onclick: move |_| {
-                    use_eval(cx)(r#"document.getElementById("addPersonaDialog").showModal();"#).unwrap();
-                } }
-                PersonaSelect {
-                    chat: *chat
+                AddPersonaButton {
+                    onclick: move |_| {
+                        use_eval(cx)(r#"document.getElementById("addPersonaDialog").showModal();"#).unwrap();
+                    }
                 }
+                PersonaSelect { chat: *chat }
             }
-            button {
-                class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
+            button { class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
                 SendIcon {}
             }
         }
@@ -290,74 +251,47 @@ fn BottomBar(cx: Scope, chat: Chat) -> Element {
 
 #[component]
 fn PersonaSelect(cx: Scope, chat: Chat) -> Element {
-    let Chat {active_persona, added_personas, ..} = chat;
+    let Chat {
+        active_persona,
+        added_personas,
+        ..
+    } = chat;
     let personas = AppData::personas(cx);
 
     cx.render(rsx!{
-    
-    added_personas.read().iter().map(|uuid| {
-        rsx! {
-            if let Some(persona) = personas.read().get(uuid) {
-                let uuid = *uuid;
-
-                rsx! {
-                    div { key: "{uuid}", class: "flex flex-col justify-center items-center",
-                        if active_persona.read().eq(&uuid) {
-                            rsx! {
-                                svg {
-                                    view_box: "0 0 24 24",
-                                    stroke: "currentColor",
-                                    stroke_width: "2",
-                                    fill: "none",
-                                    xmlns: "http://www.w3.org/2000/svg",
-                                    class: "w-4 h-4",
-                                    path { d: "M4.5 15.75l7.5-7.5 7.5 7.5", stroke_linejoin: "round", stroke_linecap: "round" }
-                            }}
-                        }
-                            rsx!{
-                                PersonaButton {
-                                name: persona.name.clone(),
-                                colour: persona.colour,
-                                onclick: move |_| {
-                                    active_persona.set(uuid);
-                                    use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+        added_personas.read().iter().map(|uuid| {
+            rsx! {
+                if let Some(persona) = personas.read().get(uuid) {
+                    let uuid = *uuid;
+        
+                    rsx! {
+                        div { key: "{uuid}", class: "flex flex-col justify-center items-center",
+                            if active_persona.read().eq(&uuid) {
+                                rsx! {
+                                    svg {
+                                        view_box: "0 0 24 24",
+                                        stroke: "currentColor",
+                                        stroke_width: "2",
+                                        fill: "none",
+                                        xmlns: "http://www.w3.org/2000/svg",
+                                        class: "w-4 h-4",
+                                        path { d: "M4.5 15.75l7.5-7.5 7.5 7.5", stroke_linejoin: "round", stroke_linecap: "round" }
+                                }}
+                            }
+                                rsx!{
+                                    PersonaButton {
+                                    name: persona.name.clone(),
+                                    colour: persona.colour,
+                                    onclick: move |_| {
+                                        active_persona.set(uuid);
+                                        use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-    })
-        // personas.read().iter().map( |(uuid, persona)| { 
-        //     let uuid = *uuid;
-
-        //     rsx! {
-        //         div { key: "{uuid}", class: "flex flex-col justify-center items-center",
-        //             if active_persona.read().eq(&uuid) {
-        //                 rsx! {
-        //                     svg {
-        //                         view_box: "0 0 24 24",
-        //                         stroke: "currentColor",
-        //                         stroke_width: "2",
-        //                         fill: "none",
-        //                         xmlns: "http://www.w3.org/2000/svg",
-        //                         class: "w-4 h-4",
-        //                         path { d: "M4.5 15.75l7.5-7.5 7.5 7.5", stroke_linejoin: "round", stroke_linecap: "round" }
-        //                 }}
-        //             }
-        //                 rsx!{
-        //                     PersonaButton {
-        //                     name: persona.name.clone(),
-        //                     colour: persona.colour,
-        //                     onclick: move |_| {
-        //                         active_persona.set(uuid);
-        //                         use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // })
+        })
     })
 }

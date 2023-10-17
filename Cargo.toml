@@ -6,11 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+console_error_panic_hook = "0.1.7"
 dioxus = { path = "../dioxus/packages/dioxus" }
 dioxus-signals = { path = "../dioxus/packages/signals", features = ["serde"]}
+dioxus-std = { path = "../dioxus-std" }
 gloo-storage = "0.3.0"
 indexmap = { version = "2.0.2", features = ["serde"] }
 serde = { version = "1.0.189", features = ["derive"] }
+wasm-logger = "0.2.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 dioxus-desktop = {path = "../dioxus/packages/desktop" }

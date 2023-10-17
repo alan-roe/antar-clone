@@ -1,8 +1,7 @@
 use crate::colours::{Colour, Rgb};
-use crate::storage::*;
 use dioxus::prelude::*;
-use dioxus_signals::Signal;
-use indexmap::{indexmap, IndexMap, indexset, IndexSet};
+use dioxus_signals::{use_signal, Signal};
+use indexmap::{indexmap, indexset, IndexMap, IndexSet};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -25,41 +24,35 @@ impl AppData {
         AppData::use_app_context(cx).chats
     }
 
-    pub fn save_personas(cx: &ScopeState) {
-        set_storage("ifs_personas", AppData::use_app_context(cx).personas)
-    }
-
-    pub fn save_chats(cx: &ScopeState) {
-        set_storage("ifs_chats", AppData::use_app_context(cx).chats)
-    }
-
     pub fn load(cx: Scope) {
-        use_context_provider(cx, AppData::default);
-        let app_context = Self::use_app_context(cx);
-        app_context
-            .personas
-            .set(get_storage("ifs_personas", move || {
-                Personas(indexmap![Uuid::new_v4() => Persona {
+        let p_uuid = Uuid::new_v4();
+        let app_data = AppData {
+            personas: dioxus_std::storage::use_synced_storage::<
+                dioxus_std::storage::LocalStorage,
+                Personas,
+            >(cx, "ifs_personas".to_string(), || {
+                Personas(indexmap![p_uuid => Persona {
                     name: "Me".to_string(),
                     colour: Rgb(0x49, 0x55, 0x65),
                 }])
-            }));
-
-        app_context
-            .chats
-            .set(get_storage("ifs_chats", move || {
-                let active_persona = *app_context.personas.read().get_index(0).unwrap().0;
-                Chats(indexmap!{Uuid::new_v4() => Chat {
+            }),
+            chats: dioxus_std::storage::use_synced_storage::<
+                dioxus_std::storage::LocalStorage,
+                Chats,
+            >(cx, "ifs_chats".to_string(), move || {
+                Chats(indexmap! {Uuid::new_v4() => Chat {
                     messages: Default::default(),
-                    active_persona: Signal::new_in_scope(active_persona, cx.scope_id()),
-                    added_personas: Signal::new_in_scope(indexset!{active_persona}, cx.scope_id()),
+                    active_persona: Signal::new_in_scope(p_uuid, cx.scope_id()),
+                    added_personas: Signal::new_in_scope(indexset!{p_uuid}, cx.scope_id()),
                     current_message: Signal::new_in_scope(String::new(), cx.scope_id())
-                }})}
-            ))
+                }})
+            }),
+        };
+        use_context_provider(cx, || app_data);
     }
 }
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Chats(IndexMap<Uuid, Chat>);
 
 impl Chats {
@@ -81,7 +74,7 @@ impl Chat {
         self.messages.write().msgs.push(Message {
             uuid: Uuid::new_v4(),
             msg: self.current_message.read().clone(),
-            persona: *self.active_persona.read()
+            persona: *self.active_persona.read(),
         });
         self.current_message.set(String::new())
     }
@@ -93,7 +86,7 @@ pub struct Persona {
     pub colour: Rgb,
 }
 
-#[derive(Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Personas(pub IndexMap<Uuid, Persona>);
 
 impl Personas {
