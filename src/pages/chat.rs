@@ -49,7 +49,7 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
 
 #[component]
 fn AddPersonaDialog(cx: Scope, chat: Chat) -> Element {
-    let Chat { added_personas, .. } = chat;
+    let Chat { added_personas, active_persona, .. } = chat;
     let personas = AppData::personas(cx);
     cx.render(rsx! {
         dialog { id: "addPersonaDialog", class: "p-4 pt-7, rounded-2xl max-w-full",
@@ -73,7 +73,15 @@ fn AddPersonaDialog(cx: Scope, chat: Chat) -> Element {
                             button {
                                 key: "{uuid}",
                                 class: "grid grid-rows-2 w-auto h-auto place-content-center place-items-center", 
-                                onclick: move |_| { added_personas.write().insert(uuid); },
+                                onclick: move |evt| { 
+                                    if added_personas.write().insert(uuid) {
+                                        use_eval(cx)(r#"
+                                            document.getElementById("addPersonaDialog").close();
+                                            document.getElementById("messageInput").focus();
+                                        "#).unwrap();
+                                        active_persona.set(uuid);
+                                    }
+                                },
                                 PersonaIcon {
                                     colour: persona.colour
                                 },
@@ -101,7 +109,11 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
                 colour: *new_persona_colour.current(),
             })
         });
-        use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#).unwrap();
+
+        use_eval(cx)(r#"
+            document.getElementById("addNewPersonaDialog").close();
+            document.getElementById("addPersonaDialog").showModal();
+        "#).unwrap();
     };
 
     cx.render(rsx! {
