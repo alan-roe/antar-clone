@@ -25,27 +25,33 @@ impl AppData {
     }
 
     pub fn load(cx: Scope) {
-        let p_uuid = Uuid::new_v4();
+        let personas = dioxus_std::storage::use_synced_storage::<
+            dioxus_std::storage::LocalStorage,
+            Personas,
+        >(cx, "ifs_personas".to_string(), || {
+            Personas(indexmap![Uuid::new_v4() => Persona {
+                name: "Me".to_string(),
+                colour: Rgb(0x49, 0x55, 0x65),
+            }])
+        });
         let app_data = AppData {
-            personas: dioxus_std::storage::use_synced_storage::<
-                dioxus_std::storage::LocalStorage,
-                Personas,
-            >(cx, "ifs_personas".to_string(), || {
-                Personas(indexmap![p_uuid => Persona {
-                    name: "Me".to_string(),
-                    colour: Rgb(0x49, 0x55, 0x65),
-                }])
-            }),
+            personas,
             chats: dioxus_std::storage::use_synced_storage::<
                 dioxus_std::storage::LocalStorage,
                 Chats,
             >(cx, "ifs_chats".to_string(), move || {
-                Chats(indexmap! {Uuid::new_v4() => Chat {
-                    messages: Default::default(),
-                    active_persona: Signal::new_in_scope(p_uuid, cx.scope_id()),
-                    added_personas: Signal::new_in_scope(indexset!{p_uuid}, cx.scope_id()),
-                    current_message: Signal::new_in_scope(String::new(), cx.scope_id())
-                }})
+                let c_uuid = Uuid::new_v4();
+                let p_uuid = *personas.read().get_index(0).unwrap().0;
+                Chats{
+                    chats: indexmap! {c_uuid => Chat {
+                        messages: Default::default(),
+                        active_persona: Signal::new_in_scope(p_uuid, cx.scope_id()),
+                        added_personas: Signal::new_in_scope(indexset!{p_uuid}, cx.scope_id()),
+                        current_message: Signal::new_in_scope(String::new(), cx.scope_id()),
+                    }},
+                    active_chat: c_uuid,
+                    save_toggle: true,
+                }
             }),
         };
         use_context_provider(cx, || app_data);
@@ -53,11 +59,20 @@ impl AppData {
 }
 
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
-pub struct Chats(IndexMap<Uuid, Chat>);
+pub struct Chats{
+    chats: IndexMap<Uuid, Chat>,
+    active_chat: Uuid,
+    save_toggle: bool
+}
 
 impl Chats {
     pub fn get_index(&self, index: usize) -> Option<(&Uuid, &Chat)> {
-        self.0.get_index(index)
+        self.chats.get_index(index)
+    }
+
+    pub fn send_message(&mut self) {
+        self.chats.get(&self.active_chat).unwrap().send();
+        self.save_toggle = !self.save_toggle;
     }
 }
 

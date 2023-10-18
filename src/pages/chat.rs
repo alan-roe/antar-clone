@@ -229,7 +229,7 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
                     .position(|r| *active_persona.read() == *r)
                     .unwrap();
                 if evt.key() == Key::Enter && !current_message.read().is_empty() {
-                    chat.send();
+                    AppData::chats(cx).write().send_message();
                 } else if evt.modifiers() == Modifiers::SHIFT
                 && evt.key() == Key::Tab
                 {
