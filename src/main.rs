@@ -38,7 +38,7 @@ fn app(cx: Scope) -> Element {
 
     cx.render(rsx! {
         div {
-            class: "grid font-sans gap-y-2 min-h-screen min-w-full max-h-screen max-w-full bg-gray-50 items-center",
+            class: "grid font-sans gap-y-2 min-h-screen min-w-full max-h-screen max-w-full pb-2 bg-gray-50 items-center",
             style: "grid-template-rows: auto minmax(0, 1fr);",
             h1 { class: "text-4xl font-bold underline mx-auto mb-auto", "Antar Clone" }
             // TODO Router for different pages
