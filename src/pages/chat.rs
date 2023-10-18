@@ -14,6 +14,25 @@ use dioxus_signals::*;
 
 #[component]
 pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
+    let js = r#"
+    if (!window.eventsRegistered) {
+        document.addEventListener("keyup", (evt) => {
+            if (evt.target.id !== "messageInput") return;
+            else if (evt.key === "Tab") {
+                evt.preventDefault();
+            }
+        });
+        document.addEventListener("keydown", (evt) => {
+            if (evt.target.id !== "messageInput") return;
+            else if (evt.key === "Tab") {
+                evt.preventDefault();
+            }
+          });
+        window.eventsRegistered = true;
+    }
+    "#;
+    use_eval(cx)(js);
+
     cx.render(rsx! {
         // TODO 3 Row Grid Layout
         div {
@@ -186,7 +205,11 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
             id: "messageInput",
             class: "flex p-2 h-full max-h-16 w-full rounded-xl bg-gray-200 outline-none hover:outline-none",
             placeholder: "Add message ...",
+            onmounted: move |cx2| {
+                cx2.inner().set_focus(true);
+            },
             oninput: move |evt| { current_message.set(evt.value.clone()) },
+            prevent_default: "onkeydown",
             onkeyup: move |evt| {
                 let persona_index = added_personas
                     .read()
@@ -195,17 +218,8 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
                     .unwrap();
                 if evt.key() == Key::Enter && !current_message.read().is_empty() {
                     chat.send();
-                } else if evt.modifiers() == Modifiers::CONTROL
-                    && evt.key() == Key::Character("]".into())
-                {
-                    if persona_index < added_personas.with(IndexSet::len) - 1 {
-                        active_persona
-                            .set(*added_personas.read().get_index(persona_index + 1).unwrap());
-                    } else {
-                        active_persona.set(*added_personas.read().get_index(0).unwrap());
-                    }
-                } else if evt.modifiers() == Modifiers::CONTROL
-                    && evt.key() == Key::Character("[".into())
+                } else if evt.modifiers() == Modifiers::SHIFT
+                && evt.key() == Key::Tab
                 {
                     if persona_index > 0 {
                         active_persona
@@ -219,7 +233,15 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
                                     .unwrap(),
                             );
                     }
-                }
+                } else if evt.key() == Key::Tab
+                {
+                    if persona_index < added_personas.with(IndexSet::len) - 1 {
+                        active_persona
+                            .set(*added_personas.read().get_index(persona_index + 1).unwrap());
+                    } else {
+                        active_persona.set(*added_personas.read().get_index(0).unwrap());
+                    }
+                } 
             },
             value: "{current_message}"
         }
