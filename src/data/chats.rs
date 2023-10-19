@@ -3,7 +3,7 @@ use indexmap::{indexmap, IndexMap, IndexSet, indexset};
 use uuid::Uuid;
 use dioxus_signals::Signal;
 
-use crate::storage::*;
+use dioxus_std::storage::*;
 
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Chats{
@@ -18,7 +18,7 @@ impl Chats {
     pub fn new(chat: Chat) -> Self {
         let uuid = Uuid::new_v4();
 
-        set_storage(format!("ifs_chat_{}", uuid).as_str(), chat);
+        set_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", uuid), chat);
         Chats {
             chat_ids: indexset! { uuid },
             chats: indexmap! { uuid => chat },
@@ -29,12 +29,12 @@ impl Chats {
 
     pub fn load_chats(&mut self, default_chat: Chat) {
         self.chat_ids.iter().for_each(|chat_id| {
-            self.chats.insert(*chat_id, get_storage(format!("ifs_chat_{}", &chat_id), || default_chat));
+            self.chats.insert(*chat_id, get_from_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", &chat_id), || default_chat));
         });
     }
 
     pub fn save_active(&self) {
-        set_storage(format!("ifs_chat_{}", &self.active_chat), self.chats.get(&self.active_chat).unwrap());
+        set_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", &self.active_chat), *self.chats.get(&self.active_chat).unwrap());
     } 
 
     pub fn get_index(&self, index: usize) -> Option<(&Uuid, &Chat)> {
