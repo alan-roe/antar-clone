@@ -18,7 +18,6 @@ impl Chats {
     pub fn new(chat: Chat) -> Self {
         let uuid = Uuid::new_v4();
 
-        LocalStorage::set(format!("ifs_chat_{}", uuid), &chat);
         Chats {
             chat_ids: indexset! { uuid },
             chats: indexmap! { uuid => chat },
