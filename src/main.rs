@@ -3,6 +3,7 @@ mod colours;
 mod components;
 mod data;
 mod pages;
+mod storage;
 
 use components::*;
 use data::*;

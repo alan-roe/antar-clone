@@ -1,4 +1,5 @@
 use crate::colours::{Colour, Rgb};
+use crate::storage::*;
 use dioxus::prelude::*;
 use dioxus_signals::{use_signal, Signal};
 use dioxus_std::storage::*;
@@ -43,22 +44,22 @@ impl AppState {
                     colour: Rgb(0x49, 0x55, 0x65),
                 })
             });
-
-        let chats = use_synced_storage::<LocalStorage, Chats>(
-            cx,
-            "ifs_chats".to_string(),
-            move || {
+        
+        let chats =
+            use_synced_storage::<LocalStorage, Chats>(cx, "ifs_chats".to_string(), move || {
                 let p_uuid = *personas.read().get_index(0).unwrap().0;
                 let chat = Chat::new(p_uuid);
                 Chats::new(chat)
-            },
-        );
+            });
+        let loaded = use_signal(cx, || false);
+        if !*loaded.read() {
+            let p_uuid = *personas.read().get_index(0).unwrap().0;
+            let chat = Chat::new(p_uuid);
+            chats.write().load_chats(chat);
+            loaded.set(true);
+        }
 
-
-        let app_state = AppState {
-            personas,
-            chats,
-        };
+        let app_state = AppState { personas, chats };
         use_context_provider(cx, || app_state);
     }
 }

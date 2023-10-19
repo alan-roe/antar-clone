@@ -3,8 +3,12 @@ use indexmap::{indexmap, IndexMap, IndexSet, indexset};
 use uuid::Uuid;
 use dioxus_signals::Signal;
 
+use crate::storage::*;
+
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Chats{
+    chat_ids: IndexSet<Uuid>,
+    #[serde(skip)]
     chats: IndexMap<Uuid, Chat>,
     active_chat: Uuid,
     save_toggle: bool
@@ -13,12 +17,25 @@ pub struct Chats{
 impl Chats {
     pub fn new(chat: Chat) -> Self {
         let uuid = Uuid::new_v4();
+
+        set_storage(format!("ifs_chat_{}", uuid).as_str(), chat);
         Chats {
+            chat_ids: indexset! { uuid },
             chats: indexmap! { uuid => chat },
             active_chat: uuid,
             save_toggle: false,
         }
     }
+
+    pub fn load_chats(&mut self, default_chat: Chat) {
+        self.chat_ids.iter().for_each(|chat_id| {
+            self.chats.insert(*chat_id, get_storage(format!("ifs_chat_{}", &chat_id), || default_chat));
+        });
+    }
+
+    pub fn save_active(&self) {
+        set_storage(format!("ifs_chat_{}", &self.active_chat), self.chats.get(&self.active_chat).unwrap());
+    } 
 
     pub fn get_index(&self, index: usize) -> Option<(&Uuid, &Chat)> {
         self.chats.get_index(index)
@@ -26,7 +43,7 @@ impl Chats {
 
     pub fn send_message(&mut self) {
         self.chats.get(&self.active_chat).unwrap().send();
-        self.save_toggle = !self.save_toggle;
+        self.save_active()
     }
 }
 
