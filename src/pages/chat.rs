@@ -50,7 +50,7 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
 #[component]
 fn AddPersonaDialog(cx: Scope, chat: Chat) -> Element {
     let Chat { added_personas, active_persona, .. } = chat;
-    let personas = AppData::personas(cx);
+    let personas = AppState::personas(cx);
     cx.render(rsx! {
         dialog { id: "addPersonaDialog", class: "p-4 pt-7, rounded-2xl max-w-full",
             div { class: "flex flex-col gap-2",
@@ -100,7 +100,7 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
     let new_persona_name = use_state(cx, String::new);
     let new_persona_colour: &UseState<Rgb> = use_state(cx, Rgb::default);
 
-    let personas = AppData::personas(cx);
+    let personas = AppState::personas(cx);
 
     let add_persona = move || {
         personas.with_mut(|personas| {
@@ -168,7 +168,7 @@ fn AddNewPersonaButton(cx: Scope) -> Element {
 #[component]
 pub fn MessageBox(cx: Scope, chat: Chat) -> Element {
     let Chat { messages, .. } = chat;
-    let personas = AppData::personas(cx);
+    let personas = AppState::personas(cx);
 
     cx.render(rsx! {
         div { class: "flex flex-col flex-grow border rounded-xl p-4 min-h-full w-full max-w-2xl gap-2 max-h-full overflow-y-scroll",
@@ -210,7 +210,7 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
         added_personas,
         ..
     } = *chat;
-    let personas = AppData::personas(cx);
+    let personas = AppState::personas(cx);
 
     cx.render(rsx!{
         input {
@@ -229,7 +229,7 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
                     .position(|r| *active_persona.read() == *r)
                     .unwrap();
                 if evt.key() == Key::Enter && !current_message.read().is_empty() {
-                    AppData::chats(cx).write().send_message();
+                    AppState::chats(cx).write().send_message();
                 } else if evt.modifiers() == Modifiers::SHIFT
                 && evt.key() == Key::Tab
                 {
@@ -264,7 +264,7 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
 fn BottomBar(cx: Scope, chat: Chat) -> Element {
     let Chat { active_persona, .. } = chat;
 
-    let personas = AppData::personas(cx);
+    let personas = AppState::personas(cx);
 
     cx.render(rsx!{
         div { class: "flex h-auto gap-x-2 w-full max-w-2xl",
@@ -278,7 +278,7 @@ fn BottomBar(cx: Scope, chat: Chat) -> Element {
             }
             button { class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
                 onclick: move |_| {
-                    AppData::chats(cx).write().send_message();
+                    AppState::chats(cx).write().send_message();
                     use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
                 },
                 
@@ -295,7 +295,7 @@ fn PersonaSelect(cx: Scope, chat: Chat) -> Element {
         added_personas,
         ..
     } = chat;
-    let personas = AppData::personas(cx);
+    let personas = AppState::personas(cx);
 
     cx.render(rsx!{
         added_personas.read().iter().map(|uuid| {

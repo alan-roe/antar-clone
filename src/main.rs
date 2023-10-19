@@ -34,7 +34,7 @@ fn main() {
 }
 
 fn app(cx: Scope) -> Element {
-    AppData::load(cx);
+    AppState::load(cx);
 
     cx.render(rsx! {
         div {
@@ -43,7 +43,7 @@ fn app(cx: Scope) -> Element {
             h1 { class: "text-4xl font-bold underline mx-auto mb-auto", "Antar Clone" }
             // TODO Router for different pages
             div { class: "w-full max-w-2xl h-full mx-auto",
-                ChatPage { chat: *AppData::chats(cx).read().get_index(0).unwrap().1 }
+                ChatPage { chat: AppState::active_chat(cx) }
             }
         }
     })

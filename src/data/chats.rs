@@ -47,7 +47,7 @@ impl Chat {
             ..Default::default()
         }
     }
-    pub fn send(&self) {
+    fn send(&self) {
         self.messages.write().msgs.push(Message {
             uuid: Uuid::new_v4(),
             msg: self.current_message.read().clone(),
