@@ -18,7 +18,7 @@ impl Chats {
     pub fn new(chat: Chat) -> Self {
         let uuid = Uuid::new_v4();
 
-        // set_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", uuid), chat);
+        LocalStorage::set(format!("ifs_chat_{}", uuid), &chat);
         Chats {
             chat_ids: indexset! { uuid },
             chats: indexmap! { uuid => chat },
@@ -34,7 +34,7 @@ impl Chats {
     }
 
     pub fn save_active(&self) {
-        // set_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", &self.active_chat), *self.chats.get(&self.active_chat).unwrap());
+        LocalStorage::set(format!("ifs_chat_{}", &self.active_chat), self.chats.get(&self.active_chat).unwrap());
     } 
 
     pub fn get_index(&self, index: usize) -> Option<(&Uuid, &Chat)> {
