@@ -12,7 +12,7 @@ use crate::colours::*;
 use dioxus::prelude::*;
 use dioxus_signals::*;
 
-#[component]
+#[inline_props]
 pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
     let js = r#"
     if (!window.eventsRegistered) {
@@ -47,7 +47,7 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
     })
 }
 
-#[component]
+#[inline_props]
 fn AddPersonaDialog(cx: Scope, chat: Chat) -> Element {
     let Chat { added_personas, active_persona, .. } = chat;
     let personas = AppState::personas(cx);
@@ -95,7 +95,7 @@ fn AddPersonaDialog(cx: Scope, chat: Chat) -> Element {
     })
 }
 
-#[component]
+#[inline_props]
 fn AddNewPersonaDialog(cx: Scope) -> Element {
     let new_persona_name = use_state(cx, String::new);
     let new_persona_colour: &UseState<Rgb> = use_state(cx, Rgb::default);
@@ -147,7 +147,7 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
     })
 }
 
-#[component]
+#[inline_props]
 fn AddNewPersonaButton(cx: Scope) -> Element {
     cx.render(rsx! {
         div { class: "flex justify-between",
@@ -165,7 +165,7 @@ fn AddNewPersonaButton(cx: Scope) -> Element {
     })
 }
 
-#[component]
+#[inline_props]
 pub fn MessageBox(cx: Scope, chat: Chat) -> Element {
     let Chat { messages, .. } = chat;
     let personas = AppState::personas(cx);
@@ -202,7 +202,7 @@ pub fn MessageBox(cx: Scope, chat: Chat) -> Element {
     })
 }
 
-#[component]
+#[inline_props]
 fn MessageInput(cx: Scope, chat: Chat) -> Element {
     let Chat {
         current_message,
@@ -260,7 +260,7 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
     })
 }
 
-#[component]
+#[inline_props]
 fn BottomBar(cx: Scope, chat: Chat) -> Element {
     let Chat { active_persona, .. } = chat;
 
@@ -288,7 +288,7 @@ fn BottomBar(cx: Scope, chat: Chat) -> Element {
     })
 }
 
-#[component]
+#[inline_props]
 fn PersonaSelect(cx: Scope, chat: Chat) -> Element {
     let Chat {
         active_persona,

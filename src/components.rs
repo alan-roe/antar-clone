@@ -12,7 +12,7 @@ pub fn text_colour_from_bg(Rgb(r, g, b): Rgb) -> Colour {
     }
 }
 
-#[component]
+#[inline_props]
 pub fn PersonaButton<'a>(
     cx: Scope,
     name: String,
@@ -27,7 +27,7 @@ pub fn PersonaButton<'a>(
     })
 }
 
-#[component]
+#[inline_props]
 pub fn PersonaIcon(cx: Scope, colour: Rgb) -> Element {
     cx.render(rsx! {
         div {
@@ -47,7 +47,7 @@ pub fn PersonaIcon(cx: Scope, colour: Rgb) -> Element {
     })
 }
 
-#[component]
+#[inline_props]
 pub fn AddPersonaButton<'a>(cx: Scope, onclick: EventHandler<'a, MouseEvent>) -> Element {
     cx.render(rsx! {
         div { class: "flex flex-col items-center text-black justify-end w-auto h-auto leading-none mr-3",

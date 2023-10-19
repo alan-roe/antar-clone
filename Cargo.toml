@@ -7,18 +7,18 @@ edition = "2021"
 
 [dependencies]
 console_error_panic_hook = "0.1.7"
-dioxus = { path = "../dioxus/packages/dioxus" }
-dioxus-signals = { path = "../dioxus/packages/signals", features = ["serde"]}
-dioxus-std = { path = "../dioxus-std" }
+dioxus = { git = "https://github.com/DioxusLabs/dioxus", rev = "1ba6ca39e3f4d4fcd3b4e75e3a739d8c35514e5b" }
+dioxus-signals = { git = "https://github.com/DioxusLabs/dioxus", rev = "1ba6ca39e3f4d4fcd3b4e75e3a739d8c35514e5b", features = ["serde"]}
+dioxus-std = { git = "https://github.com/esimkowitz/dioxus-std/", branch = "storage-v4" }
 gloo-storage = "0.3.0"
 indexmap = { version = "2.0.2", features = ["serde"] }
 serde = { version = "1.0.189", features = ["derive"] }
 wasm-logger = "0.2.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-dioxus-desktop = {path = "../dioxus/packages/desktop" }
+dioxus-desktop = {git = "https://github.com/DioxusLabs/dioxus", rev = "1ba6ca39e3f4d4fcd3b4e75e3a739d8c35514e5b" }
 uuid = { version = "1.4.1", features = [ "v4", "fast-rng", "macro-diagnostics", "serde" ] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-dioxus-web = { path = "../dioxus/packages/web" }
+dioxus-web = { git = "https://github.com/DioxusLabs/dioxus", rev = "1ba6ca39e3f4d4fcd3b4e75e3a739d8c35514e5b" }
 uuid = { version = "1.4.1", features = [ "js", "v4", "fast-rng", "macro-diagnostics", "serde" ] }

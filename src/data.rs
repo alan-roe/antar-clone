@@ -35,7 +35,7 @@ impl AppState {
         *AppState::chats(cx).read().get_index(0).unwrap().1
     }
 
-    pub fn load(cx: Scope) {
+    pub fn load(cx: &ScopeState) {
         let personas =
             use_synced_storage::<LocalStorage, Personas>(cx, "ifs_personas".to_string(), || {
                 Personas::new(Persona {
