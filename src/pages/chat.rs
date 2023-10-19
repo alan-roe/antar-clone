@@ -36,7 +36,7 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
     cx.render(rsx! {
         // TODO 3 Row Grid Layout
         div {
-            class: "grid grid-rows-3 h-full w-full",
+            class: "grid h-full w-full",
             style: "grid-template-rows: minmax(0, 1fr) auto auto;",
             div { MessageBox { chat: *chat } }
             div { MessageInput { chat: *chat } }
@@ -171,7 +171,7 @@ pub fn MessageBox(cx: Scope, chat: Chat) -> Element {
     let personas = AppState::personas(cx);
 
     cx.render(rsx! {
-        div { class: "flex flex-col flex-grow border rounded-xl p-4 min-h-full w-full max-w-2xl gap-2 max-h-full overflow-y-scroll",
+        div { class: "flex flex-col border rounded-xl p-4 min-h-full w-full gap-2 max-h-full overflow-y-scroll",
             for (i , msg) in messages.read().msgs.iter().enumerate() {
                 if let Some(persona) = personas.read().get(&msg.persona) {
                     // PersonaMessage { msg: msg.msg.clone(), persona: msg.persona.clone() }
@@ -267,7 +267,7 @@ fn BottomBar(cx: Scope, chat: Chat) -> Element {
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{
-        div { class: "flex h-auto gap-x-2 w-full max-w-2xl",
+        div { class: "flex h-auto gap-x-2 w-full",
             div { class: "flex items-end gap-x-2 h-auto w-full min-w-0 overflow-x-scroll",
                 AddPersonaButton {
                     onclick: move |_| {
