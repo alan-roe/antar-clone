@@ -46,7 +46,7 @@ fn app(cx: Scope) -> Element {
                 h1 { class: "text-4xl font-bold mb-auto pb-2 w-full bg-gray-200", "Antar Clone" }
                 // TODO Router for different pages
                 div { class: "mx-auto px-2 w-full h-full max-w-3xl",
-                    ChatPage { chat: AppState::active_chat(cx) }
+                    ChatPage { }
                 }
             }
         }
@@ -56,8 +56,32 @@ fn app(cx: Scope) -> Element {
 fn SideBar(cx: Scope) -> Element {
     cx.render(rsx! {
         div {
-            class: "hidden md:flex md:bg-gray-300",
-            "style": "width: 260px;"
+            class: "hidden md:flex md:flex-col md:bg-gray-300",
+            "style": "width: 260px;",
+            div {
+                class: "flex",
+                button {
+                    class: "bg-gray-600",
+                    onclick: |_| {
+                        AppState::chats(cx).write().new_chat(Chat::new(*AppState::personas(cx).read().get_index(0).unwrap().0));
+                    },
+                    "New Chat"
+                }
+            }
+            AppState::chats(cx).read().chats().map(|(uuid, chat)| {
+                let uuid = *uuid;
+                let mut colour = "";
+                if &uuid == AppState::chats(cx).read().active_chat_uuid() {
+                    colour = "bg-gray-400";
+                }
+                rsx! {
+                    button {
+                        class: "{colour}",
+                        onclick: move |_| AppState::set_active_chat(cx, uuid),
+                        "{chat.name}"
+                    }
+                }}
+            )
         }
     })
 }

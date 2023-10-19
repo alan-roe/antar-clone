@@ -32,7 +32,11 @@ impl AppState {
     }
 
     pub fn active_chat(cx: &ScopeState) -> Chat {
-        *AppState::chats(cx).read().get_index(0).unwrap().1
+        AppState::chats(cx).read().active_chat()
+    }
+
+    pub fn set_active_chat(cx: &ScopeState, uuid: Uuid) {
+        AppState::chats(cx).write().set_active_chat(uuid);
     }
 
     pub fn load(cx: &ScopeState) {

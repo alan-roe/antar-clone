@@ -13,7 +13,7 @@ use dioxus::prelude::*;
 use dioxus_signals::*;
 
 #[inline_props]
-pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
+pub fn ChatPage(cx: Scope) -> Element {
     let js = r#"
     if (!window.eventsRegistered) {
         document.addEventListener("keyup", (evt) => {
@@ -38,18 +38,18 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
         div {
             class: "grid h-full w-full",
             style: "grid-template-rows: minmax(0, 1fr) auto auto;",
-            div { MessageBox { chat: *chat } }
-            div { MessageInput { chat: *chat } }
-            div { BottomBar { chat: *chat } }
+            div { MessageBox { } }
+            div { MessageInput { } }
+            div { BottomBar { } }
         }
-        AddPersonaDialog { chat: *chat }
+        AddPersonaDialog { }
         AddNewPersonaDialog {}
     })
 }
 
 #[inline_props]
-fn AddPersonaDialog(cx: Scope, chat: Chat) -> Element {
-    let Chat { added_personas, active_persona, .. } = chat;
+fn AddPersonaDialog(cx: Scope) -> Element {
+    let Chat { added_personas, active_persona, .. } = AppState::active_chat(cx);
     let personas = AppState::personas(cx);
     cx.render(rsx! {
         dialog { id: "addPersonaDialog", class: "p-4 pt-7, rounded-2xl max-w-full",
@@ -166,8 +166,8 @@ fn AddNewPersonaButton(cx: Scope) -> Element {
 }
 
 #[inline_props]
-pub fn MessageBox(cx: Scope, chat: Chat) -> Element {
-    let Chat { messages, .. } = chat;
+pub fn MessageBox(cx: Scope) -> Element {
+    let Chat { messages, .. } = AppState::active_chat(cx);
     let personas = AppState::personas(cx);
 
     cx.render(rsx! {
@@ -203,13 +203,13 @@ pub fn MessageBox(cx: Scope, chat: Chat) -> Element {
 }
 
 #[inline_props]
-fn MessageInput(cx: Scope, chat: Chat) -> Element {
+fn MessageInput(cx: Scope) -> Element {
     let Chat {
         current_message,
         active_persona,
         added_personas,
         ..
-    } = *chat;
+    } = AppState::active_chat(cx);
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{
@@ -261,8 +261,8 @@ fn MessageInput(cx: Scope, chat: Chat) -> Element {
 }
 
 #[inline_props]
-fn BottomBar(cx: Scope, chat: Chat) -> Element {
-    let Chat { active_persona, .. } = chat;
+fn BottomBar(cx: Scope) -> Element {
+    let Chat { active_persona, .. } = AppState::active_chat(cx);
 
     let personas = AppState::personas(cx);
 
@@ -274,7 +274,7 @@ fn BottomBar(cx: Scope, chat: Chat) -> Element {
                         use_eval(cx)(r#"document.getElementById("addPersonaDialog").showModal();"#).unwrap();
                     }
                 }
-                PersonaSelect { chat: *chat }
+                PersonaSelect { }
             }
             button { class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
                 onclick: move |_| {
@@ -289,12 +289,12 @@ fn BottomBar(cx: Scope, chat: Chat) -> Element {
 }
 
 #[inline_props]
-fn PersonaSelect(cx: Scope, chat: Chat) -> Element {
+fn PersonaSelect(cx: Scope) -> Element {
     let Chat {
         active_persona,
         added_personas,
         ..
-    } = chat;
+    } = AppState::active_chat(cx);
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{

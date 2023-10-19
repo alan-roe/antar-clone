@@ -32,9 +32,16 @@ impl Chats {
         });
     }
 
+    pub fn new_chat(&mut self, chat: Chat) {
+        let chat_id = Uuid::new_v4();
+        self.chats.insert(chat_id, chat);
+        self.chat_ids.insert(chat_id);
+        self.active_chat = chat_id;
+    }
+
     pub fn save_active(&self) {
         LocalStorage::set(format!("ifs_chat_{}", &self.active_chat), self.chats.get(&self.active_chat).unwrap());
-    } 
+    }
 
     pub fn get_index(&self, index: usize) -> Option<(&Uuid, &Chat)> {
         self.chats.get_index(index)
@@ -44,10 +51,27 @@ impl Chats {
         self.chats.get(&self.active_chat).unwrap().send();
         self.save_active()
     }
+
+    pub fn chats(&self) -> indexmap::map::Iter<Uuid, Chat> {
+        self.chats.iter()
+    }
+
+    pub fn active_chat_uuid(&self) -> &Uuid {
+        &self.active_chat
+    }
+
+    pub fn active_chat(&self) -> Chat {
+        *self.chats.get(&self.active_chat).unwrap()
+    }
+
+    pub fn set_active_chat(&mut self, uuid: Uuid) {
+        self.active_chat = uuid;
+    }
 }
 
 #[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
 pub struct Chat {
+    pub name: Signal<String>,
     pub messages: Signal<Messages>,
     pub active_persona: Signal<Uuid>,
     pub added_personas: Signal<IndexSet<Uuid>>,
@@ -58,6 +82,7 @@ impl Chat {
     /// Creates a new chat with the specified Persona as starter
     pub fn new(persona_id: Uuid) -> Self {
         Chat {
+            name: Signal::new(format!("{}", chrono::Utc::now().format("%a, %h %d, %Y"))),
             active_persona: Signal::new(persona_id),
             added_personas: Signal::new(indexset! { persona_id }),
             ..Default::default()

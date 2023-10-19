@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = "0.4.31"
 console_error_panic_hook = "0.1.7"
 dioxus = { git = "https://github.com/DioxusLabs/dioxus", rev = "1ba6ca39e3f4d4fcd3b4e75e3a739d8c35514e5b" }
 dioxus-signals = { git = "https://github.com/DioxusLabs/dioxus", rev = "1ba6ca39e3f4d4fcd3b4e75e3a739d8c35514e5b", features = ["serde"]}
