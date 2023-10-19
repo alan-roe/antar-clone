@@ -277,6 +277,11 @@ fn BottomBar(cx: Scope, chat: Chat) -> Element {
                 PersonaSelect { chat: *chat }
             }
             button { class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
+                onclick: move |_| {
+                    AppData::chats(cx).write().send_message();
+                    use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+                },
+                
                 SendIcon {}
             }
         }
