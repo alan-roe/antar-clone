@@ -1,17 +1,17 @@
-use serde::{Deserialize, Serialize};
-use indexmap::{indexmap, IndexMap, IndexSet, indexset};
-use uuid::Uuid;
 use dioxus_signals::Signal;
+use indexmap::{indexmap, indexset, IndexMap, IndexSet};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use dioxus_std::storage::*;
 
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
-pub struct Chats{
+pub struct Chats {
     chat_ids: IndexSet<Uuid>,
     #[serde(skip)]
     chats: IndexMap<Uuid, Chat>,
     active_chat: Option<Uuid>,
-    save_toggle: bool
+    save_toggle: bool,
 }
 
 impl Chats {
@@ -28,7 +28,12 @@ impl Chats {
 
     pub fn load_chats(&mut self, default_chat: Chat) {
         self.chat_ids.iter().for_each(|chat_id| {
-            self.chats.insert(*chat_id, get_from_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", &chat_id), || default_chat));
+            self.chats.insert(
+                *chat_id,
+                get_from_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", &chat_id), || {
+                    default_chat
+                }),
+            );
         });
     }
 
@@ -41,7 +46,10 @@ impl Chats {
 
     pub fn save_active(&self) {
         if let Some(active_chat) = &self.active_chat {
-            LocalStorage::set(format!("ifs_chat_{}", active_chat), self.chats.get(active_chat).unwrap());
+            LocalStorage::set(
+                format!("ifs_chat_{}", active_chat),
+                self.chats.get(active_chat).unwrap(),
+            );
         }
     }
 
@@ -53,7 +61,7 @@ impl Chats {
         if let Some(active_chat) = &self.active_chat {
             self.chats.get(active_chat).unwrap().send();
             self.save_active()
-        } 
+        }
     }
 
     pub fn chats(&self) -> indexmap::map::Iter<Uuid, Chat> {
@@ -65,7 +73,8 @@ impl Chats {
     }
 
     pub fn active_chat(&self) -> Option<Chat> {
-        self.active_chat_uuid().map(|active_chat| *self.chats.get(&active_chat).unwrap()) 
+        self.active_chat_uuid()
+            .map(|active_chat| *self.chats.get(&active_chat).unwrap())
     }
 
     pub fn set_active_chat(&mut self, uuid: Uuid) {

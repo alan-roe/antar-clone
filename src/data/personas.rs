@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use indexmap::{IndexMap, indexmap};
-use uuid::Uuid;
 use crate::colours::Rgb;
+use indexmap::{indexmap, IndexMap};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Persona {

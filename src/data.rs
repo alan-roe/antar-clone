@@ -53,7 +53,7 @@ impl AppState {
                     colour: Rgb(0x49, 0x55, 0x65),
                 })
             });
-        
+
         let chats =
             use_synced_storage::<LocalStorage, Chats>(cx, "ifs_chats".to_string(), move || {
                 let p_uuid = *personas.read().get_index(0).unwrap().0;

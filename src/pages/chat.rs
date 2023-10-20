@@ -38,18 +38,22 @@ pub fn ChatPage(cx: Scope) -> Element {
         div {
             class: "grid h-full w-full",
             style: "grid-template-rows: minmax(0, 1fr) auto auto;",
-            div { MessageBox { } }
-            div { MessageInput { } }
-            div { BottomBar { } }
+            div { MessageBox {} }
+            div { MessageInput {} }
+            div { BottomBar {} }
         }
-        AddPersonaDialog { }
+        AddPersonaDialog {}
         AddNewPersonaDialog {}
     })
 }
 
 #[inline_props]
 fn AddPersonaDialog(cx: Scope) -> Element {
-    let Chat { added_personas, active_persona, .. } = AppState::active_chat(cx)?;
+    let Chat {
+        added_personas,
+        active_persona,
+        ..
+    } = AppState::active_chat(cx)?;
     let personas = AppState::personas(cx);
     cx.render(rsx! {
         dialog { id: "addPersonaDialog", class: "p-4 pt-7, rounded-2xl max-w-full",
@@ -73,7 +77,7 @@ fn AddPersonaDialog(cx: Scope) -> Element {
                             button {
                                 key: "{uuid}",
                                 class: "grid grid-rows-2 w-auto h-auto place-content-center place-items-center", 
-                                onclick: move |evt| { 
+                                onclick: move |evt| {
                                     if added_personas.write().insert(uuid) {
                                         use_eval(cx)(r#"
                                             document.getElementById("addPersonaDialog").close();
@@ -110,10 +114,13 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
             })
         });
 
-        use_eval(cx)(r#"
+        use_eval(cx)(
+            r#"
             document.getElementById("addNewPersonaDialog").close();
             document.getElementById("addPersonaDialog").showModal();
-        "#).unwrap();
+        "#,
+        )
+        .unwrap();
     };
 
     cx.render(rsx! {
@@ -230,9 +237,7 @@ fn MessageInput(cx: Scope) -> Element {
                     .unwrap();
                 if evt.key() == Key::Enter && !current_message.read().is_empty() {
                     AppState::chats(cx).write().send_message();
-                } else if evt.modifiers() == Modifiers::SHIFT
-                && evt.key() == Key::Tab
-                {
+                } else if evt.modifiers() == Modifiers::SHIFT && evt.key() == Key::Tab {
                     if persona_index > 0 {
                         active_persona
                             .set(*added_personas.read().get_index(persona_index - 1).unwrap());
@@ -245,15 +250,14 @@ fn MessageInput(cx: Scope) -> Element {
                                     .unwrap(),
                             );
                     }
-                } else if evt.key() == Key::Tab
-                {
+                } else if evt.key() == Key::Tab {
                     if persona_index < added_personas.with(IndexSet::len) - 1 {
                         active_persona
                             .set(*added_personas.read().get_index(persona_index + 1).unwrap());
                     } else {
                         active_persona.set(*added_personas.read().get_index(0).unwrap());
                     }
-                } 
+                }
             },
             value: "{current_message}"
         }
@@ -274,14 +278,15 @@ fn BottomBar(cx: Scope) -> Element {
                         use_eval(cx)(r#"document.getElementById("addPersonaDialog").showModal();"#).unwrap();
                     }
                 }
-                PersonaSelect { }
+                PersonaSelect {}
             }
-            button { class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
+            button {
+                class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
                 onclick: move |_| {
                     AppState::chats(cx).write().send_message();
                     use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
                 },
-                
+
                 SendIcon {}
             }
         }
@@ -302,7 +307,7 @@ fn PersonaSelect(cx: Scope) -> Element {
             rsx! {
                 if let Some(persona) = personas.read().get(uuid) {
                     let uuid = *uuid;
-        
+
                     rsx! {
                         div { key: "{uuid}", class: "flex flex-col justify-center items-center",
                             if active_persona.read().eq(&uuid) {
