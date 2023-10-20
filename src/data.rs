@@ -18,6 +18,7 @@ pub struct AppState {
     chats: Signal<Chats>,
 }
 
+/// Ties together the different types of state
 impl AppState {
     fn use_app_context(cx: &ScopeState) -> Self {
         *use_context(cx).expect("no app context provided, must be loaded first")
@@ -31,12 +32,17 @@ impl AppState {
         AppState::use_app_context(cx).chats
     }
 
-    pub fn active_chat(cx: &ScopeState) -> Chat {
+    pub fn active_chat(cx: &ScopeState) -> Option<Chat> {
         AppState::chats(cx).read().active_chat()
     }
 
     pub fn set_active_chat(cx: &ScopeState, uuid: Uuid) {
         AppState::chats(cx).write().set_active_chat(uuid);
+        use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+    }
+
+    pub fn delete_active_chat(cx: &ScopeState) {
+        AppState::chats(cx).write().delete_active();
     }
 
     pub fn load(cx: &ScopeState) {

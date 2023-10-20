@@ -54,6 +54,9 @@ fn app(cx: Scope) -> Element {
 }
 
 fn SideBar(cx: Scope) -> Element {
+    let chats = AppState::chats(cx);
+    let rename = use_signal(cx, || false);
+    
     cx.render(rsx! {
         div {
             class: "hidden md:flex md:flex-col md:bg-gray-300",
@@ -62,26 +65,57 @@ fn SideBar(cx: Scope) -> Element {
                 class: "flex",
                 button {
                     class: "bg-gray-600",
-                    onclick: |_| {
-                        AppState::chats(cx).write().new_chat(Chat::new(*AppState::personas(cx).read().get_index(0).unwrap().0));
+                    onclick: move |_| {
+                        chats.write().new_chat(Chat::new(*AppState::personas(cx).read().get_index(0).unwrap().0));
                     },
                     "New Chat"
                 }
             }
-            AppState::chats(cx).read().chats().map(|(uuid, chat)| {
+            chats.read().chats().map(|(uuid, chat)| {
                 let uuid = *uuid;
-                let mut colour = "";
-                if &uuid == AppState::chats(cx).read().active_chat_uuid() {
-                    colour = "bg-gray-400";
-                }
-                rsx! {
-                    button {
-                        class: "{colour}",
-                        onclick: move |_| AppState::set_active_chat(cx, uuid),
-                        "{chat.name}"
+                    let selected = chats.read().active_chat_uuid()  == &Some(uuid);
+                    rsx! {
+                        div {
+                            class: "flex gap-2 justify-between",
+                            if *rename.read() && selected {
+                                rsx!{input {
+                                    onchange: move |evt| chats.read().active_chat().unwrap().name.set(evt.value.clone()),
+                                    onkeyup: move |evt| {
+                                        if evt.key() == Key::Enter {
+                                            chats.write().save_active();
+                                            rename.set(false);
+                                        }
+                                    },
+                                    value: "{chat.name}"
+                                }}
+                            } else {
+                                rsx!{button {
+                                    class: if selected { "bg-gray-400"} else { "" },
+                                    onclick: move |_| AppState::set_active_chat(cx, uuid),
+                                    "{chat.name}"
+                                }}
+                            }
+                            if selected {
+                                rsx!{
+                                    div {
+                                        class: "flex gap-2",
+                                        button {
+                                            class: "bg-gray-400",
+                                            onclick: move |_| rename.set(true),
+                                            "R"
+                                        }
+                                        button {
+                                            class: "bg-gray-400",
+                                            onclick: move |_| AppState::delete_active_chat(cx),
+                                            "x"
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
                     }
-                }}
-            )
+                })
         }
     })
 }

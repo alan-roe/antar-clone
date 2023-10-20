@@ -10,7 +10,7 @@ pub struct Chats{
     chat_ids: IndexSet<Uuid>,
     #[serde(skip)]
     chats: IndexMap<Uuid, Chat>,
-    active_chat: Uuid,
+    active_chat: Option<Uuid>,
     save_toggle: bool
 }
 
@@ -21,7 +21,7 @@ impl Chats {
         Chats {
             chat_ids: indexset! { uuid },
             chats: indexmap! { uuid => chat },
-            active_chat: uuid,
+            active_chat: Some(uuid),
             save_toggle: false,
         }
     }
@@ -36,11 +36,13 @@ impl Chats {
         let chat_id = Uuid::new_v4();
         self.chats.insert(chat_id, chat);
         self.chat_ids.insert(chat_id);
-        self.active_chat = chat_id;
+        self.active_chat = Some(chat_id);
     }
 
     pub fn save_active(&self) {
-        LocalStorage::set(format!("ifs_chat_{}", &self.active_chat), self.chats.get(&self.active_chat).unwrap());
+        if let Some(active_chat) = &self.active_chat {
+            LocalStorage::set(format!("ifs_chat_{}", active_chat), self.chats.get(active_chat).unwrap());
+        }
     }
 
     pub fn get_index(&self, index: usize) -> Option<(&Uuid, &Chat)> {
@@ -48,24 +50,34 @@ impl Chats {
     }
 
     pub fn send_message(&mut self) {
-        self.chats.get(&self.active_chat).unwrap().send();
-        self.save_active()
+        if let Some(active_chat) = &self.active_chat {
+            self.chats.get(active_chat).unwrap().send();
+            self.save_active()
+        } 
     }
 
     pub fn chats(&self) -> indexmap::map::Iter<Uuid, Chat> {
         self.chats.iter()
     }
 
-    pub fn active_chat_uuid(&self) -> &Uuid {
+    pub fn active_chat_uuid(&self) -> &Option<Uuid> {
         &self.active_chat
     }
 
-    pub fn active_chat(&self) -> Chat {
-        *self.chats.get(&self.active_chat).unwrap()
+    pub fn active_chat(&self) -> Option<Chat> {
+        self.active_chat_uuid().map(|active_chat| *self.chats.get(&active_chat).unwrap()) 
     }
 
     pub fn set_active_chat(&mut self, uuid: Uuid) {
-        self.active_chat = uuid;
+        self.active_chat = Some(uuid);
+    }
+
+    pub fn delete_active(&mut self) {
+        if let Some(active_chat) = &self.active_chat {
+            self.chats.shift_remove(active_chat);
+            self.chat_ids.shift_remove(active_chat);
+            self.active_chat = None;
+        }
     }
 }
 

@@ -49,7 +49,7 @@ pub fn ChatPage(cx: Scope) -> Element {
 
 #[inline_props]
 fn AddPersonaDialog(cx: Scope) -> Element {
-    let Chat { added_personas, active_persona, .. } = AppState::active_chat(cx);
+    let Chat { added_personas, active_persona, .. } = AppState::active_chat(cx)?;
     let personas = AppState::personas(cx);
     cx.render(rsx! {
         dialog { id: "addPersonaDialog", class: "p-4 pt-7, rounded-2xl max-w-full",
@@ -167,7 +167,7 @@ fn AddNewPersonaButton(cx: Scope) -> Element {
 
 #[inline_props]
 pub fn MessageBox(cx: Scope) -> Element {
-    let Chat { messages, .. } = AppState::active_chat(cx);
+    let Chat { messages, .. } = AppState::active_chat(cx)?;
     let personas = AppState::personas(cx);
 
     cx.render(rsx! {
@@ -209,7 +209,7 @@ fn MessageInput(cx: Scope) -> Element {
         active_persona,
         added_personas,
         ..
-    } = AppState::active_chat(cx);
+    } = AppState::active_chat(cx)?;
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{
@@ -262,7 +262,7 @@ fn MessageInput(cx: Scope) -> Element {
 
 #[inline_props]
 fn BottomBar(cx: Scope) -> Element {
-    let Chat { active_persona, .. } = AppState::active_chat(cx);
+    let Chat { active_persona, .. } = AppState::active_chat(cx)?;
 
     let personas = AppState::personas(cx);
 
@@ -294,7 +294,7 @@ fn PersonaSelect(cx: Scope) -> Element {
         active_persona,
         added_personas,
         ..
-    } = AppState::active_chat(cx);
+    } = AppState::active_chat(cx)?;
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{
