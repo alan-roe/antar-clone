@@ -227,9 +227,11 @@ fn MessageInput(cx: Scope) -> Element {
             onmounted: move |cx2| {
                 cx2.inner().set_focus(true);
             },
-            oninput: move |evt| { if evt.value.ends_with('\n') {
-                AppState::chats(cx).write().send_message();
-            } else { current_message.set(evt.value.clone()) } },
+            oninput: move |evt| { 
+                if evt.value.ends_with('\n') {
+                    AppState::chats(cx).write().send_message();
+                } else { current_message.set(evt.value.clone()) }
+            },
             prevent_default: "onkeydown onkeyup",
             onkeyup: move |evt| {
                 let persona_index = added_personas

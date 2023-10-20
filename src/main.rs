@@ -97,8 +97,16 @@ fn SideBar(cx: Scope) -> Element {
                             class: "flex gap-2 justify-between",
                             if *rename.read() && selected {
                                 rsx!{
-                                    input {
-                                        onchange: move |evt| chats.read().active_chat().unwrap().name.set(evt.value.clone()),
+                                    textarea {
+                                        rows: "1",
+                                        oninput: move |evt| {
+                                            if evt.value.ends_with('\n') {
+                                                chats.write().save_active();
+                                                rename.set(false);
+                                            } else {
+                                                AppState::active_chat(cx).read().unwrap().name.set(evt.value.clone())
+                                            }
+                                        },
                                         onkeyup: move |evt| {
                                             if evt.key() == Key::Enter {
                                                 chats.write().save_active();

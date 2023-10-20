@@ -13,6 +13,7 @@ dioxus-signals = { git = "https://github.com/DioxusLabs/dioxus", rev = "1ba6ca39
 dioxus-std = { git = "https://github.com/esimkowitz/dioxus-std/", branch = "storage-v4" }
 gloo-storage = "0.3.0"
 indexmap = { version = "2.0.2", features = ["serde"] }
+log = "0.4.20"
 serde = { version = "1.0.189", features = ["derive"] }
 wasm-logger = "0.2.0"
 

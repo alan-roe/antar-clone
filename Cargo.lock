@@ -65,6 +65,7 @@ dependencies = [
  "dioxus-web",
  "gloo-storage",
  "indexmap",
+ "log",
  "serde",
  "uuid",
  "wasm-logger",
