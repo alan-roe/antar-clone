@@ -54,17 +54,37 @@ fn SideBar(cx: Scope) -> Element {
     let chats = AppState::chats(cx);
     let rename = use_signal(cx, || false);
 
+    // Just for mobile
+    let sidebar_open = use_signal(cx, || false);
+    let sidebar_style = use_signal(cx, || "hidden");
+    let open_sidebar_style = use_signal(cx, || "flex");
+    dioxus_signals::use_effect(cx, move || {
+        if *sidebar_open.read() {
+            sidebar_style.set("flex flex-col");
+            open_sidebar_style.set("hidden");
+        } else {
+            open_sidebar_style.set("flex");
+            sidebar_style.set("hidden");
+        }
+    });
+    
     cx.render(rsx! {
+        button {
+            class: "bg-gray-950 text-gray-50 {open_sidebar_style} absolute md:hidden",
+            "style": "height: 40px;",
+            onclick: move |_| {
+                sidebar_open.set(true);
+            },
+            "OPEN"
+        }
         div {
-            class: "hidden md:flex md:flex-col md:bg-gray-300",
+            class: "{sidebar_style} md:flex md:flex-col bg-gray-300",
             "style": "width: 260px;",
             div { class: "flex",
                 button {
                     class: "bg-gray-600",
                     onclick: move |_| {
-                        chats
-                            .write()
-                            .new_chat(Chat::new(*AppState::personas(cx).read().get_index(0).unwrap().0));
+                        AppState::new_chat(cx, Chat::new(*AppState::personas(cx).read().get_index(0).unwrap().0));
                     },
                     "New Chat"
                 }
@@ -76,22 +96,29 @@ fn SideBar(cx: Scope) -> Element {
                         div {
                             class: "flex gap-2 justify-between",
                             if *rename.read() && selected {
-                                rsx!{input {
-                                    onchange: move |evt| chats.read().active_chat().unwrap().name.set(evt.value.clone()),
-                                    onkeyup: move |evt| {
-                                        if evt.key() == Key::Enter {
-                                            chats.write().save_active();
-                                            rename.set(false);
-                                        }
-                                    },
-                                    value: "{chat.name}"
-                                }}
+                                rsx!{
+                                    input {
+                                        onchange: move |evt| chats.read().active_chat().unwrap().name.set(evt.value.clone()),
+                                        onkeyup: move |evt| {
+                                            if evt.key() == Key::Enter {
+                                                chats.write().save_active();
+                                                rename.set(false);
+                                            }
+                                        },
+                                        value: "{chat.name}"
+                                    }
+                                }
                             } else {
-                                rsx!{button {
-                                    class: if selected { "bg-gray-400"} else { "" },
-                                    onclick: move |_| AppState::set_active_chat(cx, uuid),
-                                    "{chat.name}"
-                                }}
+                                rsx!{
+                                    button {
+                                        class: if selected { "bg-gray-400"} else { "" },
+                                        onclick: move |_| {
+                                            AppState::set_active_chat(cx, uuid);
+                                            sidebar_open.set(false);
+                                        },
+                                        "{chat.name}"
+                                    }
+                                }
                             }
                             if selected {
                                 rsx!{
@@ -110,7 +137,6 @@ fn SideBar(cx: Scope) -> Element {
                                     }
                                 }
                             }
-
                         }
                     }
                 })

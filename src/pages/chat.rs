@@ -53,7 +53,7 @@ fn AddPersonaDialog(cx: Scope) -> Element {
         added_personas,
         active_persona,
         ..
-    } = AppState::active_chat(cx)?;
+    } = (*AppState::active_chat(cx).read())?;
     let personas = AppState::personas(cx);
     cx.render(rsx! {
         dialog { id: "addPersonaDialog", class: "p-4 pt-7, rounded-2xl max-w-full",
@@ -174,7 +174,7 @@ fn AddNewPersonaButton(cx: Scope) -> Element {
 
 #[inline_props]
 pub fn MessageBox(cx: Scope) -> Element {
-    let Chat { messages, .. } = AppState::active_chat(cx)?;
+    let Chat { messages, .. } = (*AppState::active_chat(cx).read())?;
     let personas = AppState::personas(cx);
 
     cx.render(rsx! {
@@ -216,19 +216,21 @@ fn MessageInput(cx: Scope) -> Element {
         active_persona,
         added_personas,
         ..
-    } = AppState::active_chat(cx)?;
+    } = (*AppState::active_chat(cx).read())?;
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{
-        input {
+        textarea {
             id: "messageInput",
-            class: "flex p-2 h-full max-h-16 w-full rounded-xl bg-gray-200 outline-none hover:outline-none",
+            class: "flex p-2 max-h-32 h-auto w-full rounded-xl bg-gray-200 outline-none hover:outline-none",
             placeholder: "Add message ...",
             onmounted: move |cx2| {
                 cx2.inner().set_focus(true);
             },
-            oninput: move |evt| { current_message.set(evt.value.clone()) },
-            prevent_default: "onkeydown",
+            oninput: move |evt| { if evt.value.ends_with('\n') {
+                AppState::chats(cx).write().send_message();
+            } else { current_message.set(evt.value.clone()) } },
+            prevent_default: "onkeydown onkeyup",
             onkeyup: move |evt| {
                 let persona_index = added_personas
                     .read()
@@ -266,7 +268,7 @@ fn MessageInput(cx: Scope) -> Element {
 
 #[inline_props]
 fn BottomBar(cx: Scope) -> Element {
-    let Chat { active_persona, .. } = AppState::active_chat(cx)?;
+    let Chat { active_persona, .. } = (*AppState::active_chat(cx).read())?;
 
     let personas = AppState::personas(cx);
 
@@ -299,7 +301,7 @@ fn PersonaSelect(cx: Scope) -> Element {
         active_persona,
         added_personas,
         ..
-    } = AppState::active_chat(cx)?;
+    } = (*AppState::active_chat(cx).read())?;
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{

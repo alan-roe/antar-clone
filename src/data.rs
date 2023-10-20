@@ -16,6 +16,7 @@ pub use personas::*;
 pub struct AppState {
     personas: Signal<Personas>,
     chats: Signal<Chats>,
+    active_chat: Signal<Option<Chat>>,
 }
 
 /// Ties together the different types of state
@@ -32,17 +33,25 @@ impl AppState {
         AppState::use_app_context(cx).chats
     }
 
-    pub fn active_chat(cx: &ScopeState) -> Option<Chat> {
-        AppState::chats(cx).read().active_chat()
+    pub fn active_chat(cx: &ScopeState) -> Signal<Option<Chat>> {
+        AppState::use_app_context(cx).active_chat
     }
 
     pub fn set_active_chat(cx: &ScopeState, uuid: Uuid) {
-        AppState::chats(cx).write().set_active_chat(uuid);
-        use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+        let chats = AppState::chats(cx);
+        chats.write().set_active_chat(uuid);
+        AppState::use_app_context(cx).active_chat.set(chats.read().active_chat());
     }
 
     pub fn delete_active_chat(cx: &ScopeState) {
         AppState::chats(cx).write().delete_active();
+        AppState::use_app_context(cx).active_chat.set(None);
+    }
+
+    pub fn new_chat(cx: &ScopeState, chat: Chat) {
+        let chats = AppState::chats(cx);
+        chats.write().new_chat(chat);
+        AppState::use_app_context(cx).active_chat.set(chats.read().active_chat());
     }
 
     pub fn load(cx: &ScopeState) {
@@ -68,7 +77,9 @@ impl AppState {
             loaded.set(true);
         }
 
-        let app_state = AppState { personas, chats };
+        let active_chat = use_signal(cx, || chats.read().active_chat());
+
+        let app_state = AppState { personas, chats, active_chat };
         use_context_provider(cx, || app_state);
     }
 }
