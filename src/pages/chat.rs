@@ -34,13 +34,22 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
     use_eval(cx)(js);
 
     cx.render(rsx! {
-        // TODO 3 Row Grid Layout
         div {
             class: "grid h-full w-full",
             style: "grid-template-rows: minmax(0, 1fr) auto auto;",
-            div { MessageBox {} }
-            div { MessageInput {} }
-            div { BottomBar {} }
+            div { MessageBox {
+                messages: chat.messages
+            } }
+            div { MessageInput {
+                current_message: chat.current_message,
+                active_persona: chat.active_persona,
+                added_personas: chat.added_personas,
+                on_send: |_| AppState::chats(cx).write().send_message(),
+            } }
+            div { BottomBar {
+                active_persona: chat.active_persona,
+                added_personas: chat.added_personas,
+            } }
         }
         AddPersonaDialog { 
             added_personas: chat.added_personas,
@@ -107,77 +116,19 @@ fn AddPersonaDialog(cx: Scope, added_personas: Signal<IndexSet<Uuid>>, active_pe
 }
 
 #[inline_props]
-fn AddNewPersonaDialog<'a>(cx: Scope, on_create: EventHandler<'a, (String, Rgb)>) -> Element {
-    let new_persona_name = use_state(cx, String::new);
-    let new_persona_colour: &UseState<Rgb> = use_state(cx, Rgb::default);
-
-    let personas = AppState::personas(cx);
-
-    cx.render(rsx! {
-        dialog { id: "addNewPersonaDialog", class: "p-4 pt-7 rounded-2xl",
-            // div within dialog to prevent display: flex causing dialog to show even when not open
-            div { class: "flex flex-col gap-2",
-                input {
-                    placeholder: "Persona Name",
-                    oninput: move |evt| { new_persona_name.set(evt.value.clone()) },
-                    onkeyup: move |evt| {
-                        if evt.key() == Key::Enter && !new_persona_name.current().is_empty() {
-                            on_create.call((new_persona_name.current().to_string(), *new_persona_colour.current()));
-                            use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#);
-                        }
-                    },
-                    value: "{new_persona_name.current()}"
-                }
-                div { class: "flex flex-col gap-0",
-                    "Choose a colour: "
-                    input {
-                        r#type: "color",
-                        onchange: move |evt| new_persona_colour.set(Rgb::from_str(&evt.value).unwrap())
-                    }
-                }
-                button {
-                    class: "w-full bg-gray-950 hover:bg-gray-800 text-white font-bold py-2 px-4 shadow rounded-xl",
-                    onclick: move |_| {
-                        on_create.call((new_persona_name.current().to_string(), *new_persona_colour.current()));
-                        use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#);
-                    },
-                    AddNewPersonaButton {}
-                }
-            }
-        }
-    })
-}
-
-#[inline_props]
-fn AddNewPersonaButton(cx: Scope) -> Element {
-    cx.render(rsx! {
-        div { class: "flex justify-between",
-            div { "Add Persona" }
-            svg {
-                view_box: "0 0 24 24",
-                xmlns: "http://www.w3.org/2000/svg",
-                stroke_width: "1.5",
-                fill: "none",
-                stroke: "currentColor",
-                class: "w-6 h-6",
-                path { stroke_linecap: "round", stroke_linejoin: "round", d: "M4.5 12.75l6 6 9-13.5" }
-            }
-        }
-    })
-}
-
-#[inline_props]
-pub fn MessageBox(cx: Scope) -> Element {
-    let Chat { messages, .. } = (*AppState::active_chat(cx).read())?;
+pub fn MessageBox(cx: Scope, messages: Signal<Messages>) -> Element {
     let personas = AppState::personas(cx);
 
     cx.render(rsx! {
         div { class: "flex flex-col border rounded-xl p-4 min-h-full w-full gap-2 max-h-full overflow-y-scroll",
             for (i , msg) in messages.read().msgs.iter().enumerate() {
                 if let Some(persona) = personas.read().get(&msg.persona) {
-                    // PersonaMessage { msg: msg.msg.clone(), persona: msg.persona.clone() }
                     rsx! {
-                        div { key: "{msg.uuid}", class: if i == 0 { "flex-col gap-2 mt-auto" } else { "flex-col gap-2" },
+                        div { 
+                            key: "{msg.uuid}",
+                            // If it's the first message we want to push it to the bottom of the div
+                            class: if i == 0 { "flex-col gap-2 mt-auto" } else { "flex-col gap-2" },
+                            // If it's the first message or a different persona than previous then render the persona info
                             if i == 0 || !msg.persona.eq(&messages.read().msgs.get(i-1).unwrap().persona) {
                                 rsx! {
                                     div {
@@ -191,7 +142,9 @@ pub fn MessageBox(cx: Scope) -> Element {
                                 class: "rounded-lg px-2 py-1 w-fit text-left",
                                 style: "{Colour::BgColour(persona.colour)} {text_colour_from_bg(persona.colour)}",
                                 onmounted: move |cx2| {
-                                    cx2.inner().scroll_to(ScrollBehavior::Smooth);
+                                    if i == messages.read().msgs.len()-1 {
+                                        cx2.inner().scroll_to(ScrollBehavior::Smooth);
+                                    }
                                 },
                                 span { "{msg.msg}" }
                             }
@@ -204,13 +157,22 @@ pub fn MessageBox(cx: Scope) -> Element {
 }
 
 #[inline_props]
-fn MessageInput(cx: Scope) -> Element {
-    let Chat {
-        current_message,
-        active_persona,
-        added_personas,
-        ..
-    } = (*AppState::active_chat(cx).read())?;
+fn Message (cx: Scope, message: String, colour: Rgb) -> Element {
+    let colour = *colour;
+    cx.render(rsx!{
+        div {
+            class: "rounded-lg px-2 py-1 w-fit text-left",
+            style: "{Colour::BgColour(colour)} {text_colour_from_bg(colour)}",
+            onmounted: move |cx2| {
+                cx2.inner().scroll_to(ScrollBehavior::Smooth);
+            },
+            span { "{message }" }
+        }
+    })
+}
+
+#[inline_props]
+fn MessageInput<'a>(cx: Scope, current_message: Signal<String>, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>, on_send: EventHandler<'a, ()>) -> Element {
     let personas = AppState::personas(cx);
     let eval = use_eval(cx);
     cx.render(rsx!{
@@ -222,16 +184,19 @@ fn MessageInput(cx: Scope) -> Element {
             onmounted: move |cx2| {
                 cx2.inner().set_focus(true);
             },
-            oninput: move |evt| {
-                eval(r#"
-                        el = document.getElementById("messageInput");
-                        el.style.height = "auto";
-                        el.style.height = el.scrollHeight + "px";
-                    "#).unwrap();
-
+            oninput: move |mut evt| {
                 if evt.value.ends_with('\n') {
-                    AppState::chats(cx).write().send_message();
-                } else { current_message.set(evt.value.clone()) }
+                    on_send.call(());
+                    // Clear the element value for correct height resize
+                    eval(r#"document.getElementById("messageInput").value = "";"#).unwrap();
+                } else {
+                    current_message.set(evt.value.clone());
+                }
+                eval(r#"
+                    el = document.getElementById("messageInput");
+                    el.style.height = "auto";
+                    el.style.height = el.scrollHeight + "px";
+                "#).unwrap();
             },
             prevent_default: "onkeydown onkeyup",
             onkeyup: move |evt| {
@@ -241,7 +206,8 @@ fn MessageInput(cx: Scope) -> Element {
                     .position(|r| *active_persona.read() == *r)
                     .unwrap();
                 if evt.key() == Key::Enter && !current_message.read().is_empty() {
-                    AppState::chats(cx).write().send_message();
+                    on_send.call(());
+                    eval(r#"documnet.getElementById("messageInput").value = "";"#).unwrap();
                 } else if evt.modifiers() == Modifiers::SHIFT && evt.key() == Key::Tab {
                     if persona_index > 0 {
                         active_persona
@@ -270,9 +236,7 @@ fn MessageInput(cx: Scope) -> Element {
 }
 
 #[inline_props]
-fn BottomBar(cx: Scope) -> Element {
-    let Chat { active_persona, .. } = (*AppState::active_chat(cx).read())?;
-
+fn BottomBar(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>) -> Element {
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{
@@ -283,7 +247,10 @@ fn BottomBar(cx: Scope) -> Element {
                         use_eval(cx)(r#"document.getElementById("addPersonaDialog").showModal();"#).unwrap();
                     }
                 }
-                PersonaSelect {}
+                PersonaSelect {
+                    active_persona: *active_persona,
+                    added_personas: *added_personas,
+                }
             }
             button {
                 class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
@@ -299,12 +266,7 @@ fn BottomBar(cx: Scope) -> Element {
 }
 
 #[inline_props]
-fn PersonaSelect(cx: Scope) -> Element {
-    let Chat {
-        active_persona,
-        added_personas,
-        ..
-    } = (*AppState::active_chat(cx).read())?;
+fn PersonaSelect(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>) -> Element {
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{

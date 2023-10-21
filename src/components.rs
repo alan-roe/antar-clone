@@ -1,5 +1,8 @@
+use std::str::FromStr;
+
 use crate::colours::*;
 use crate::data::*;
+use dioxus::html::input_data::keyboard_types::Key;
 use dioxus::prelude::*;
 use dioxus_signals::Signal;
 use uuid::Uuid;
@@ -80,6 +83,67 @@ fn AddPersonaIcon(cx: Scope) -> Element {
                 xmlns: "http://www.w3.org/2000/svg",
                 class: "w-5 h-5",
                 path { d: "M10.75 6.75a.75.75 0 00-1.5 0v2.5h-2.5a.75.75 0 000 1.5h2.5v2.5a.75.75 0 001.5 0v-2.5h2.5a.75.75 0 000-1.5h-2.5v-2.5z" }
+            }
+        }
+    })
+}
+
+
+#[inline_props]
+pub fn AddNewPersonaDialog<'a>(cx: Scope, on_create: EventHandler<'a, (String, Rgb)>) -> Element {
+    let new_persona_name = use_state(cx, String::new);
+    let new_persona_colour: &UseState<Rgb> = use_state(cx, Rgb::default);
+
+    let personas = AppState::personas(cx);
+
+    cx.render(rsx! {
+        dialog { id: "addNewPersonaDialog", class: "p-4 pt-7 rounded-2xl",
+            // div within dialog to prevent display: flex causing dialog to show even when not open
+            div { class: "flex flex-col gap-2",
+                input {
+                    placeholder: "Persona Name",
+                    oninput: move |evt| { new_persona_name.set(evt.value.clone()) },
+                    onkeyup: move |evt| {
+                        if evt.key() == Key::Enter && !new_persona_name.current().is_empty() {
+                            on_create.call((new_persona_name.current().to_string(), *new_persona_colour.current()));
+                            use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#);
+                        }
+                    },
+                    value: "{new_persona_name.current()}"
+                }
+                div { class: "flex flex-col gap-0",
+                    "Choose a colour: "
+                    input {
+                        r#type: "color",
+                        onchange: move |evt| new_persona_colour.set(Rgb::from_str(&evt.value).unwrap())
+                    }
+                }
+                button {
+                    class: "w-full bg-gray-950 hover:bg-gray-800 text-white font-bold py-2 px-4 shadow rounded-xl",
+                    onclick: move |_| {
+                        on_create.call((new_persona_name.current().to_string(), *new_persona_colour.current()));
+                        use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#);
+                    },
+                    AddNewPersonaButton {}
+                }
+            }
+        }
+    })
+}
+
+#[inline_props]
+fn AddNewPersonaButton(cx: Scope) -> Element {
+    cx.render(rsx! {
+        div { class: "flex justify-between",
+            div { "Add Persona" }
+            svg {
+                view_box: "0 0 24 24",
+                xmlns: "http://www.w3.org/2000/svg",
+                stroke_width: "1.5",
+                fill: "none",
+                stroke: "currentColor",
+                class: "w-6 h-6",
+                path { stroke_linecap: "round", stroke_linejoin: "round", d: "M4.5 12.75l6 6 9-13.5" }
             }
         }
     })
