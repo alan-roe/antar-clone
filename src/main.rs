@@ -42,7 +42,7 @@ fn app(cx: Scope) -> Element {
             div {
                 class: "grid gap-y-2 h-full w-full pb-2 bg-gray-50 items-center text-center",
                 style: "grid-template-rows: auto minmax(0, 1fr);",
-                h1 { class: "text-4xl font-bold mb-auto pb-2 w-full bg-gray-200", "Antar Clone" }
+                h1 { class: "text-4xl font-bold mb-auto pb-2 w-full bg-gray-200", "Let Me Talk" }
                 // TODO Router for different pages
                 div { class: "mx-auto px-2 w-full h-full max-w-3xl", 
                     if let Some(chat) = AppState::active_chat(cx).read().deref() {
