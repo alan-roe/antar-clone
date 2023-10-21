@@ -9,7 +9,7 @@ use data::*;
 use dioxus_signals::*;
 use uuid::Uuid;
 
-use std::rc::Rc;
+use std::{rc::Rc, ops::Deref};
 
 use dioxus::{
     html::input_data::keyboard_types::{Key, Modifiers},
@@ -44,7 +44,13 @@ fn app(cx: Scope) -> Element {
                 style: "grid-template-rows: auto minmax(0, 1fr);",
                 h1 { class: "text-4xl font-bold mb-auto pb-2 w-full bg-gray-200", "Antar Clone" }
                 // TODO Router for different pages
-                div { class: "mx-auto px-2 w-full h-full max-w-3xl", ChatPage {} }
+                div { class: "mx-auto px-2 w-full h-full max-w-3xl", 
+                    if let Some(chat) = AppState::active_chat(cx).read().deref() {
+                        rsx! {
+                            ChatPage { chat: *chat }
+                        }
+                    }
+                }
             }
         }
     })

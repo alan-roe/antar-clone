@@ -117,6 +117,11 @@ impl Chat {
         });
         self.current_message.set(String::new())
     }
+
+    pub fn add_persona(&self, uuid: Uuid) -> bool {
+        self.active_persona.set(uuid);
+        self.added_personas.write().insert(uuid)
+    }
 }
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]

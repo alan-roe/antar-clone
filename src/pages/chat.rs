@@ -13,7 +13,7 @@ use dioxus::prelude::*;
 use dioxus_signals::*;
 
 #[inline_props]
-pub fn ChatPage(cx: Scope) -> Element {
+pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
     let js = r#"
     if (!window.eventsRegistered) {
         document.addEventListener("keyup", (evt) => {
@@ -42,18 +42,25 @@ pub fn ChatPage(cx: Scope) -> Element {
             div { MessageInput {} }
             div { BottomBar {} }
         }
-        AddPersonaDialog {}
-        AddNewPersonaDialog {}
+        AddPersonaDialog { 
+            added_personas: chat.added_personas,
+            active_persona: chat.active_persona
+         }
+        AddNewPersonaDialog {
+            on_create: move |(persona_name, persona_colour)| {
+                let p_uuid = AppState::personas(cx).write().push(Persona {
+                        name: persona_name,
+                        colour: persona_colour,
+                    });
+                chat.add_persona(p_uuid);
+                AppState::chats(cx).read().save_active();
+            }
+        }
     })
 }
 
 #[inline_props]
-fn AddPersonaDialog(cx: Scope) -> Element {
-    let Chat {
-        added_personas,
-        active_persona,
-        ..
-    } = (*AppState::active_chat(cx).read())?;
+fn AddPersonaDialog(cx: Scope, added_personas: Signal<IndexSet<Uuid>>, active_persona: Signal<Uuid>) -> Element {
     let personas = AppState::personas(cx);
     cx.render(rsx! {
         dialog { id: "addPersonaDialog", class: "p-4 pt-7, rounded-2xl max-w-full",
@@ -100,28 +107,11 @@ fn AddPersonaDialog(cx: Scope) -> Element {
 }
 
 #[inline_props]
-fn AddNewPersonaDialog(cx: Scope) -> Element {
+fn AddNewPersonaDialog<'a>(cx: Scope, on_create: EventHandler<'a, (String, Rgb)>) -> Element {
     let new_persona_name = use_state(cx, String::new);
     let new_persona_colour: &UseState<Rgb> = use_state(cx, Rgb::default);
 
     let personas = AppState::personas(cx);
-
-    let add_persona = move || {
-        personas.with_mut(|personas| {
-            personas.push(Persona {
-                name: new_persona_name.current().to_string(),
-                colour: *new_persona_colour.current(),
-            })
-        });
-
-        use_eval(cx)(
-            r#"
-            document.getElementById("addNewPersonaDialog").close();
-            document.getElementById("addPersonaDialog").showModal();
-        "#,
-        )
-        .unwrap();
-    };
 
     cx.render(rsx! {
         dialog { id: "addNewPersonaDialog", class: "p-4 pt-7 rounded-2xl",
@@ -132,7 +122,8 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
                     oninput: move |evt| { new_persona_name.set(evt.value.clone()) },
                     onkeyup: move |evt| {
                         if evt.key() == Key::Enter && !new_persona_name.current().is_empty() {
-                            add_persona()
+                            on_create.call((new_persona_name.current().to_string(), *new_persona_colour.current()));
+                            use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#);
                         }
                     },
                     value: "{new_persona_name.current()}"
@@ -146,7 +137,10 @@ fn AddNewPersonaDialog(cx: Scope) -> Element {
                 }
                 button {
                     class: "w-full bg-gray-950 hover:bg-gray-800 text-white font-bold py-2 px-4 shadow rounded-xl",
-                    onclick: move |_| add_persona(),
+                    onclick: move |_| {
+                        on_create.call((new_persona_name.current().to_string(), *new_persona_colour.current()));
+                        use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#);
+                    },
                     AddNewPersonaButton {}
                 }
             }

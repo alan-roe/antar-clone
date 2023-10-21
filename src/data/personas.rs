@@ -28,8 +28,11 @@ impl Personas {
         self.0.get_index(index)
     }
 
-    pub fn push(&mut self, value: Persona) {
-        self.0.insert(Uuid::new_v4(), value);
+    pub fn push(&mut self, value: Persona) -> Uuid {
+        let uuid = Uuid::new_v4();
+        self.0.insert(uuid, value);
+
+        uuid
     }
 
     pub fn count(&self) -> usize {

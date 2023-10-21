@@ -33,6 +33,10 @@ impl AppState {
         AppState::use_app_context(cx).chats
     }
 
+    pub fn save_active_chat(cx: &ScopeState) {
+        AppState::chats(cx).read().save_active();
+    }
+
     pub fn active_chat(cx: &ScopeState) -> Signal<Option<Chat>> {
         AppState::use_app_context(cx).active_chat
     }
