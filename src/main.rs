@@ -73,7 +73,7 @@ fn SideBar(cx: Scope) -> Element {
             sidebar_style.set("hidden");
         }
     });
-    
+    let eval = use_eval(cx);
     cx.render(rsx! {
         button {
             class: "bg-gray-950 text-gray-50 {open_sidebar_style} absolute md:hidden",
@@ -104,8 +104,16 @@ fn SideBar(cx: Scope) -> Element {
                             if *rename.read() && selected {
                                 rsx!{
                                     textarea {
+                                        class: "w-full max-h-20",
+                                        id: "renameChat",
                                         rows: "1",
-                                        oninput: move |evt| {
+                                        oninput: move |mut evt| {
+                                            eval(r#"
+                                                el = document.getElementById("renameChat");
+                                                el.style.height = "auto";
+                                                el.style.height = el.scrollHeight + "px";
+                                            "#).unwrap();
+                                            // let style = evt.values.get_mut("style").unwrap();
                                             if evt.value.ends_with('\n') {
                                                 chats.write().save_active();
                                                 rename.set(false);
@@ -123,9 +131,10 @@ fn SideBar(cx: Scope) -> Element {
                                     }
                                 }
                             } else {
+                                let style = if selected { "bg-gray-400"} else { "" };
                                 rsx!{
                                     button {
-                                        class: if selected { "bg-gray-400"} else { "" },
+                                        class: "text-left {style}",
                                         onclick: move |_| {
                                             AppState::set_active_chat(cx, uuid);
                                             sidebar_open.set(false);

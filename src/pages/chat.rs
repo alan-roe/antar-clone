@@ -188,7 +188,7 @@ pub fn MessageBox(cx: Scope) -> Element {
                                 }
                             }
                             div {
-                                class: "rounded-lg px-2 py-1 w-fit",
+                                class: "rounded-lg px-2 py-1 w-fit text-left",
                                 style: "{Colour::BgColour(persona.colour)} {text_colour_from_bg(persona.colour)}",
                                 onmounted: move |cx2| {
                                     cx2.inner().scroll_to(ScrollBehavior::Smooth);
@@ -212,16 +212,23 @@ fn MessageInput(cx: Scope) -> Element {
         ..
     } = (*AppState::active_chat(cx).read())?;
     let personas = AppState::personas(cx);
-
+    let eval = use_eval(cx);
     cx.render(rsx!{
         textarea {
             id: "messageInput",
             class: "flex p-2 max-h-32 h-auto w-full rounded-xl bg-gray-200 outline-none hover:outline-none",
+            rows: 1,
             placeholder: "Add message ...",
             onmounted: move |cx2| {
                 cx2.inner().set_focus(true);
             },
-            oninput: move |evt| { 
+            oninput: move |evt| {
+                eval(r#"
+                        el = document.getElementById("messageInput");
+                        el.style.height = "auto";
+                        el.style.height = el.scrollHeight + "px";
+                    "#).unwrap();
+
                 if evt.value.ends_with('\n') {
                     AppState::chats(cx).write().send_message();
                 } else { current_message.set(evt.value.clone()) }
