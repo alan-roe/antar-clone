@@ -33,6 +33,20 @@ fn main() {
     }
 }
 
+fn test_app(cx: Scope) -> Element {
+    cx.render(rsx!{
+        div {
+            input {
+                class: "w-96, h-10 border",
+                onmounted: move |cx| {
+                    cx.inner().set_focus(true);
+                }
+
+            }
+        }
+    })
+}
+
 fn app(cx: Scope) -> Element {
     AppState::load(cx);
 

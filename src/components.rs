@@ -90,14 +90,14 @@ fn AddPersonaIcon(cx: Scope) -> Element {
 
 
 #[inline_props]
-pub fn AddNewPersonaDialog<'a>(cx: Scope, on_create: EventHandler<'a, (String, Rgb)>) -> Element {
+pub fn AddNewPersonaDialog<'a>(cx: Scope, id: &'a str, on_create: EventHandler<'a, (String, Rgb)>) -> Element {
     let new_persona_name = use_state(cx, String::new);
     let new_persona_colour: &UseState<Rgb> = use_state(cx, Rgb::default);
 
     let personas = AppState::personas(cx);
 
     cx.render(rsx! {
-        dialog { id: "addNewPersonaDialog", class: "p-4 pt-7 rounded-2xl",
+        dialog { id: "{id}", class: "p-4 pt-7 rounded-2xl",
             // div within dialog to prevent display: flex causing dialog to show even when not open
             div { class: "flex flex-col gap-2",
                 input {
@@ -106,7 +106,7 @@ pub fn AddNewPersonaDialog<'a>(cx: Scope, on_create: EventHandler<'a, (String, R
                     onkeyup: move |evt| {
                         if evt.key() == Key::Enter && !new_persona_name.current().is_empty() {
                             on_create.call((new_persona_name.current().to_string(), *new_persona_colour.current()));
-                            use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#);
+                            use_eval(cx)(&format!(r#"document.getElementById("{id}").close();"#));
                         }
                     },
                     value: "{new_persona_name.current()}"
@@ -122,7 +122,7 @@ pub fn AddNewPersonaDialog<'a>(cx: Scope, on_create: EventHandler<'a, (String, R
                     class: "w-full bg-gray-950 hover:bg-gray-800 text-white font-bold py-2 px-4 shadow rounded-xl",
                     onclick: move |_| {
                         on_create.call((new_persona_name.current().to_string(), *new_persona_colour.current()));
-                        use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").close();"#);
+                        use_eval(cx)(&format!(r#"document.getElementById("{id}").close();"#));
                     },
                     AddNewPersonaButton {}
                 }

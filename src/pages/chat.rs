@@ -14,29 +14,30 @@ use dioxus_signals::*;
 
 #[inline_props]
 pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
-    let js = r#"
-    if (!window.eventsRegistered) {
-        document.addEventListener("keyup", (evt) => {
-            if (evt.target.id !== "messageInput") return;
-            else if (evt.key === "Tab") {
+    let add_persona_id = use_signal(cx, || format!("pd_{}", chat.uuid()));
+    let input_id = use_signal(cx, || format!("mi_{}", chat.uuid()));
+    let add_new_persona_id = use_signal(cx, || format!("npd_{}", chat.uuid()));
+    let js = format!(r#"
+        document.addEventListener("keyup", (evt) => {{
+            if (evt.target.id !== "{input_id}") return;
+            else if (evt.key === "Tab") {{
                 evt.preventDefault();
-            }
-        });
-        document.addEventListener("keydown", (evt) => {
-            if (evt.target.id !== "messageInput") return;
-            else if (evt.key === "Tab") {
+            }}
+        }});
+        document.addEventListener("keydown", (evt) => {{
+            if (evt.target.id !== "{input_id}") return;
+            else if (evt.key === "Tab") {{
                 evt.preventDefault();
-            }
-          });
-        window.eventsRegistered = true;
-    }
-    "#;
-    use_eval(cx)(js);
+            }}
+          }});
+    "#);
+    use_eval(cx)(&js);
 
     let on_send = |_| {
         chat.send();
         chat.save();
     };
+
 
     cx.render(rsx! {
         div {
@@ -46,22 +47,29 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
                 messages: chat.messages
             } }
             div { MessageInput {
+                id: "{input_id}",
                 current_message: chat.current_message,
                 active_persona: chat.active_persona,
                 added_personas: chat.added_personas,
                 on_send: on_send,
             } }
             div { BottomBar {
+                add_persona_id: "{add_persona_id}",
+                input_id: "{input_id}",
                 active_persona: chat.active_persona,
                 added_personas: chat.added_personas,
                 on_send: on_send,
             } }
         }
-        AddPersonaDialog { 
+        AddPersonaDialog {
+            id: "{add_persona_id}",
+            input_id: "{input_id}",
+            add_new_persona_id: "{add_new_persona_id}",
             added_personas: chat.added_personas,
             active_persona: chat.active_persona
          }
         AddNewPersonaDialog {
+            id: "{add_new_persona_id}",
             on_create: move |(persona_name, persona_colour)| {
                 let p_uuid = AppState::personas(cx).write().push(Persona {
                         name: persona_name,
@@ -75,19 +83,20 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
 }
 
 #[inline_props]
-fn AddPersonaDialog(cx: Scope, added_personas: Signal<IndexSet<Uuid>>, active_persona: Signal<Uuid>) -> Element {
+fn AddPersonaDialog<'a>(cx: Scope, id: &'a str, input_id: &'a str, add_new_persona_id: &'a str, added_personas: Signal<IndexSet<Uuid>>, active_persona: Signal<Uuid>) -> Element {
     let personas = AppState::personas(cx);
     cx.render(rsx! {
-        dialog { id: "addPersonaDialog", class: "p-4 pt-7, rounded-2xl max-w-full",
+        dialog { id: "{id}", class: "p-4 pt-7, rounded-2xl max-w-full",
             div { class: "flex flex-col gap-2",
                 div { class: "grid grid-cols-2 place-content-between",
                     "My Personas"
                     button {
                         class: "bg-gray-300",
                         onclick: move |_| {
-                            use_eval(cx)(r#"document.getElementById("addNewPersonaDialog").showModal();"#)
+                            use_eval(cx)(&format!(r#"document.getElementById("{add_new_persona_id}").showModal();"#))
                                 .unwrap();
-                            use_eval(cx)(r#"document.getElementById("addPersonaDialog").close();"#).unwrap();
+                            let js = format!(r#"document.getElementById("{id}").close();"#);
+                            use_eval(cx)(&js).unwrap();
                         },
                         "Add New"
                     }
@@ -101,10 +110,11 @@ fn AddPersonaDialog(cx: Scope, added_personas: Signal<IndexSet<Uuid>>, active_pe
                                 class: "grid grid-rows-2 w-auto h-auto place-content-center place-items-center", 
                                 onclick: move |evt| {
                                     if added_personas.write().insert(uuid) {
-                                        use_eval(cx)(r#"
-                                            document.getElementById("addPersonaDialog").close();
-                                            document.getElementById("messageInput").focus();
-                                        "#).unwrap();
+                                        let js = format!(r#"
+                                            document.getElementById("{id}").close();
+                                            document.getElementById("{input_id}").focus();
+                                        "#);
+                                        use_eval(cx)(&js).unwrap();
                                         active_persona.set(uuid);
                                     }
                                 },
@@ -178,12 +188,13 @@ fn Message (cx: Scope, message: String, colour: Rgb) -> Element {
 }
 
 #[inline_props]
-fn MessageInput<'a>(cx: Scope, current_message: Signal<String>, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>, on_send: EventHandler<'a, ()>) -> Element {
+fn MessageInput<'a>(cx: Scope, id: &'a str, current_message: Signal<String>, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>, on_send: EventHandler<'a, ()>) -> Element {
     let personas = AppState::personas(cx);
     let eval = use_eval(cx);
+    // let id = use_signal(cx, move || id);
     cx.render(rsx!{
         textarea {
-            id: "messageInput",
+            id: *id,
             class: "flex p-2 max-h-32 h-auto w-full rounded-xl bg-gray-200 outline-none hover:outline-none",
             rows: 1,
             placeholder: "Add message ...",
@@ -194,15 +205,18 @@ fn MessageInput<'a>(cx: Scope, current_message: Signal<String>, active_persona: 
                 if evt.value.ends_with('\n') {
                     on_send.call(());
                     // Clear the element value for correct height resize
-                    eval(r#"document.getElementById("messageInput").value = "";"#).unwrap();
+                    let js = format!(r#"document.getElementById("{id}").value = "";"#);
+                    eval(&js).unwrap();
                 } else {
                     current_message.set(evt.value.clone());
                 }
-                eval(r#"
-                    el = document.getElementById("messageInput");
+                let js = format!(r#"
+                    el = document.getElementById("{id}");
                     el.style.height = "auto";
                     el.style.height = el.scrollHeight + "px";
-                "#).unwrap();
+                "#);
+
+                eval(&js).unwrap();
             },
             prevent_default: "onkeydown onkeyup",
             onkeyup: move |evt| {
@@ -213,7 +227,8 @@ fn MessageInput<'a>(cx: Scope, current_message: Signal<String>, active_persona: 
                     .unwrap();
                 if evt.key() == Key::Enter && !current_message.read().is_empty() {
                     on_send.call(());
-                    eval(r#"document.getElementById("messageInput").value = "";"#).unwrap();
+                    let js = format!(r#"document.getElementById("{id}").value = "";"#);
+                    eval(&js).unwrap();
                 } else if evt.modifiers() == Modifiers::SHIFT && evt.key() == Key::Tab {
                     if persona_index > 0 {
                         active_persona
@@ -242,18 +257,20 @@ fn MessageInput<'a>(cx: Scope, current_message: Signal<String>, active_persona: 
 }
 
 #[inline_props]
-fn BottomBar<'a>(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>, on_send: EventHandler<'a, ()>) -> Element {
+fn BottomBar<'a>(cx: Scope, add_persona_id: &'a str, input_id: &'a str, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>, on_send: EventHandler<'a, ()>) -> Element {
     let personas = AppState::personas(cx);
-
+    let eval = use_eval(cx);
     cx.render(rsx!{
         div { class: "flex h-auto gap-x-2 w-full",
             div { class: "flex items-end gap-x-2 h-auto w-full min-w-0 overflow-x-scroll",
                 AddPersonaButton {
                     onclick: move |_| {
-                        use_eval(cx)(r#"document.getElementById("addPersonaDialog").showModal();"#).unwrap();
+                        let js = format!(r#"document.getElementById("{add_persona_id}").showModal();"#);
+                        use_eval(cx)(&js).unwrap();
                     }
                 }
                 PersonaSelect {
+                    input_id: input_id,
                     active_persona: *active_persona,
                     added_personas: *added_personas,
                 }
@@ -262,7 +279,8 @@ fn BottomBar<'a>(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal
                 class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
                 onclick: move |_| {
                     on_send.call(());
-                    use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+                    let js = format!(r#"document.getElementById("{input_id}").focus();"#);
+                    eval(&js).unwrap();
                 },
 
                 SendIcon {}
@@ -272,9 +290,9 @@ fn BottomBar<'a>(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal
 }
 
 #[inline_props]
-fn PersonaSelect(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>) -> Element {
+fn PersonaSelect<'a>(cx: Scope, input_id: &'a str, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>) -> Element {
     let personas = AppState::personas(cx);
-
+    let eval = use_eval(cx);
     cx.render(rsx!{
         added_personas.read().iter().map(|uuid| {
             rsx! {
@@ -301,7 +319,8 @@ fn PersonaSelect(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal
                                     colour: persona.colour,
                                     onclick: move |_| {
                                         active_persona.set(uuid);
-                                        use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
+                                        let js = format!(r#"document.getElementById("{input_id}").focus();"#);
+                                        eval(&js).unwrap();
                                     }
                                 }
                             }

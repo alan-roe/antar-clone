@@ -17,12 +17,10 @@ pub struct Chats {
 
 impl Chats {
     pub fn new(chat: Chat) -> Self {
-        let uuid = chat.uuid;
-
         Chats {
-            chat_ids: indexset! { uuid },
-            chats: indexset! { chat },
-            active_chat: Some(uuid),
+            chat_ids: Default::default(),
+            chats: Default::default(),
+            active_chat: None,
             save_toggle: false,
         }
     }
