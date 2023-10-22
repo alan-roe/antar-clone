@@ -33,6 +33,11 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
     "#;
     use_eval(cx)(js);
 
+    let on_send = |_| {
+        chat.send();
+        chat.save();
+    };
+
     cx.render(rsx! {
         div {
             class: "grid h-full w-full",
@@ -44,12 +49,12 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
                 current_message: chat.current_message,
                 active_persona: chat.active_persona,
                 added_personas: chat.added_personas,
-                on_send: |_| chat.save(),
+                on_send: on_send,
             } }
             div { BottomBar {
                 active_persona: chat.active_persona,
                 added_personas: chat.added_personas,
-                on_send: |_| chat.save()
+                on_send: on_send,
             } }
         }
         AddPersonaDialog { 
@@ -208,7 +213,7 @@ fn MessageInput<'a>(cx: Scope, current_message: Signal<String>, active_persona: 
                     .unwrap();
                 if evt.key() == Key::Enter && !current_message.read().is_empty() {
                     on_send.call(());
-                    eval(r#"documnet.getElementById("messageInput").value = "";"#).unwrap();
+                    eval(r#"document.getElementById("messageInput").value = "";"#).unwrap();
                 } else if evt.modifiers() == Modifiers::SHIFT && evt.key() == Key::Tab {
                     if persona_index > 0 {
                         active_persona

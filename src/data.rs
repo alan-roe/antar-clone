@@ -44,7 +44,7 @@ impl AppState {
     pub fn set_active_chat(cx: &ScopeState, uuid: Uuid) {
         let chats = AppState::chats(cx);
         chats.write().set_active_chat(uuid);
-        AppState::use_app_context(cx).active_chat.set(chats.read().active_chat());
+        AppState::use_app_context(cx).active_chat.set(chats.read().active_chat().copied());
     }
 
     pub fn delete_active_chat(cx: &ScopeState) {
@@ -55,7 +55,7 @@ impl AppState {
     pub fn new_chat(cx: &ScopeState, chat: Chat) {
         let chats = AppState::chats(cx);
         chats.write().new_chat(chat);
-        AppState::use_app_context(cx).active_chat.set(chats.read().active_chat());
+        AppState::use_app_context(cx).active_chat.set(chats.read().active_chat().copied());
     }
 
     pub fn load(cx: &ScopeState) {
@@ -81,7 +81,7 @@ impl AppState {
             loaded.set(true);
         }
 
-        let active_chat = use_signal(cx, || chats.read().active_chat());
+        let active_chat = use_signal(cx, || chats.read().active_chat().copied());
 
         let app_state = AppState { personas, chats, active_chat };
         use_context_provider(cx, || app_state);

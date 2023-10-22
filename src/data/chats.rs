@@ -67,9 +67,9 @@ impl Chats {
         &self.active_chat
     }
 
-    pub fn active_chat(&self) -> Option<Chat> {
+    pub fn active_chat(&self) -> Option<&Chat> {
         self.active_chat_uuid()
-            .map(|active_chat| *self.chats.get(&active_chat).unwrap())
+            .map(|active_chat| self.chats.get(&active_chat)).flatten()
     }
 
     pub fn set_active_chat(&mut self, uuid: Uuid) {
@@ -120,7 +120,7 @@ impl Chat {
         );
     }
 
-    fn send(&self) {
+    pub fn send(&self) {
         self.messages.write().msgs.push(Message {
             uuid: Uuid::new_v4(),
             msg: self.current_message.read().clone(),
