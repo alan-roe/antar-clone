@@ -44,11 +44,12 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
                 current_message: chat.current_message,
                 active_persona: chat.active_persona,
                 added_personas: chat.added_personas,
-                on_send: |_| AppState::chats(cx).write().send_message(),
+                on_send: |_| chat.save(),
             } }
             div { BottomBar {
                 active_persona: chat.active_persona,
                 added_personas: chat.added_personas,
+                on_send: |_| chat.save()
             } }
         }
         AddPersonaDialog { 
@@ -62,7 +63,7 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
                         colour: persona_colour,
                     });
                 chat.add_persona(p_uuid);
-                AppState::chats(cx).read().save_active();
+                chat.save();
             }
         }
     })
@@ -236,7 +237,7 @@ fn MessageInput<'a>(cx: Scope, current_message: Signal<String>, active_persona: 
 }
 
 #[inline_props]
-fn BottomBar(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>) -> Element {
+fn BottomBar<'a>(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>, on_send: EventHandler<'a, ()>) -> Element {
     let personas = AppState::personas(cx);
 
     cx.render(rsx!{
@@ -255,7 +256,7 @@ fn BottomBar(cx: Scope, active_persona: Signal<Uuid>, added_personas: Signal<Ind
             button {
                 class: "px-4 py-1 text-sm text-gray-900 font-semibold rounded-xl hover:text-gray-900 hover:bg-gray-200 hover:border-transparent focus:outline-none focus:ring-2 focus:ring-gray-100",
                 onclick: move |_| {
-                    AppState::chats(cx).write().send_message();
+                    on_send.call(());
                     use_eval(cx)(r#"document.getElementById("messageInput").focus();"#).unwrap();
                 },
 

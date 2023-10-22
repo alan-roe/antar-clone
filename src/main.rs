@@ -95,8 +95,9 @@ fn SideBar(cx: Scope) -> Element {
                     "New Chat"
                 }
             }
-            chats.read().chats().map(|(uuid, chat)| {
-                let uuid = *uuid;
+            chats.read().chats().map(|chat| {
+                let chat = *chat;
+                let uuid = *chat.uuid();
                     let selected = chats.read().active_chat_uuid()  == &Some(uuid);
                     rsx! {
                         div {
@@ -115,7 +116,7 @@ fn SideBar(cx: Scope) -> Element {
                                             "#).unwrap();
                                             // let style = evt.values.get_mut("style").unwrap();
                                             if evt.value.ends_with('\n') {
-                                                chats.write().save_active();
+                                                chat.save();
                                                 rename.set(false);
                                             } else {
                                                 AppState::active_chat(cx).read().unwrap().name.set(evt.value.clone())
@@ -123,7 +124,7 @@ fn SideBar(cx: Scope) -> Element {
                                         },
                                         onkeyup: move |evt| {
                                             if evt.key() == Key::Enter {
-                                                chats.write().save_active();
+                                                chat.save();
                                                 rename.set(false);
                                             }
                                         },

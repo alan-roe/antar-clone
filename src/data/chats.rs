@@ -2,6 +2,7 @@ use dioxus_signals::Signal;
 use indexmap::{indexmap, indexset, IndexMap, IndexSet};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use std::hash::{Hash, Hasher};
 
 use dioxus_std::storage::*;
 
@@ -9,18 +10,18 @@ use dioxus_std::storage::*;
 pub struct Chats {
     chat_ids: IndexSet<Uuid>,
     #[serde(skip)]
-    chats: IndexMap<Uuid, Chat>,
+    chats: IndexSet<Chat>,
     active_chat: Option<Uuid>,
     save_toggle: bool,
 }
 
 impl Chats {
     pub fn new(chat: Chat) -> Self {
-        let uuid = Uuid::new_v4();
+        let uuid = chat.uuid;
 
         Chats {
             chat_ids: indexset! { uuid },
-            chats: indexmap! { uuid => chat },
+            chats: indexset! { chat },
             active_chat: Some(uuid),
             save_toggle: false,
         }
@@ -29,31 +30,25 @@ impl Chats {
     pub fn load_chats(&mut self, default_chat: Chat) {
         self.chat_ids.iter().for_each(|chat_id| {
             self.chats.insert(
-                *chat_id,
-                get_from_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", &chat_id), || {
-                    default_chat
-                }),
+                Chat::load_or(chat_id, default_chat),
             );
         });
     }
 
     pub fn new_chat(&mut self, chat: Chat) {
-        let chat_id = Uuid::new_v4();
-        self.chats.insert(chat_id, chat);
+        let chat_id = chat.uuid;
+        self.chats.insert(chat);
         self.chat_ids.insert(chat_id);
         self.active_chat = Some(chat_id);
     }
 
     pub fn save_active(&self) {
         if let Some(active_chat) = &self.active_chat {
-            LocalStorage::set(
-                format!("ifs_chat_{}", active_chat),
-                self.chats.get(active_chat).unwrap(),
-            );
+            self.chats.get(active_chat).unwrap().save();
         }
     }
 
-    pub fn get_index(&self, index: usize) -> Option<(&Uuid, &Chat)> {
+    pub fn get_index(&self, index: usize) -> Option<&Chat> {
         self.chats.get_index(index)
     }
 
@@ -64,7 +59,7 @@ impl Chats {
         }
     }
 
-    pub fn chats(&self) -> indexmap::map::Iter<Uuid, Chat> {
+    pub fn chats(&self) -> indexmap::set::Iter<Chat> {
         self.chats.iter()
     }
 
@@ -90,8 +85,9 @@ impl Chats {
     }
 }
 
-#[derive(Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Default, Serialize, Deserialize)]
 pub struct Chat {
+    uuid: Uuid,
     pub name: Signal<String>,
     pub messages: Signal<Messages>,
     pub active_persona: Signal<Uuid>,
@@ -103,12 +99,27 @@ impl Chat {
     /// Creates a new chat with the specified Persona as starter
     pub fn new(persona_id: Uuid) -> Self {
         Chat {
+            uuid: Uuid::new_v4(),
             name: Signal::new(format!("{}", chrono::Utc::now().format("%a, %h %d, %Y"))),
             active_persona: Signal::new(persona_id),
             added_personas: Signal::new(indexset! { persona_id }),
             ..Default::default()
         }
     }
+
+    fn load_or(uuid: &Uuid, default_chat: Chat) -> Self {
+        get_from_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", uuid), || {
+            default_chat
+        })
+    }
+
+    pub fn save(&self) {
+        LocalStorage::set(
+            format!("ifs_chat_{}", &self.uuid),
+            self,
+        );
+    }
+
     fn send(&self) {
         self.messages.write().msgs.push(Message {
             uuid: Uuid::new_v4(),
@@ -121,6 +132,30 @@ impl Chat {
     pub fn add_persona(&self, uuid: Uuid) -> bool {
         self.active_persona.set(uuid);
         self.added_personas.write().insert(uuid)
+    }
+
+    pub fn uuid(&self) -> &Uuid {
+        &self.uuid
+    }
+}
+
+impl Eq for Chat { }
+
+impl PartialEq for Chat {
+    fn eq(&self, other: &Self) -> bool {
+        self.uuid == other.uuid
+    }
+}
+
+impl Hash for Chat {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.uuid.hash(state);
+    }
+}
+
+impl indexmap::Equivalent<Chat> for Uuid {
+    fn equivalent(&self, key: &Chat) -> bool {
+        self == &key.uuid
     }
 }
 
