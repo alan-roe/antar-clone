@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use std::hash::{Hash, Hasher};
 
-use dioxus_std::storage::*;
+use crate::storage;
 
 #[derive(Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Chats {
@@ -106,16 +106,13 @@ impl Chat {
     }
 
     fn load_or(uuid: &Uuid, default_chat: Chat) -> Self {
-        get_from_storage::<LocalStorage, Chat>(format!("ifs_chat_{}", uuid), || {
+        storage::retrieve(format!("ifs_chat_{}", uuid), || {
             default_chat
         })
     }
 
     pub fn save(&self) {
-        LocalStorage::set(
-            format!("ifs_chat_{}", &self.uuid),
-            self,
-        );
+        storage::store(format!("ifs_chat_{}", &self.uuid), self.clone());
     }
 
     pub fn send(&self) {
@@ -156,6 +153,9 @@ impl indexmap::Equivalent<Chat> for Uuid {
         self == &key.uuid
     }
 }
+
+unsafe impl Send for Chat {}
+unsafe impl Sync for Chat {}
 
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Message {

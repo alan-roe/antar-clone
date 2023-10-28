@@ -1,7 +1,7 @@
 use crate::colours::{Colour, Rgb};
+use crate::storage::*;
 use dioxus::prelude::*;
 use dioxus_signals::{use_signal, Signal};
-use dioxus_std::storage::*;
 use indexmap::{indexmap, indexset, IndexMap, IndexSet};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -59,16 +59,16 @@ impl AppState {
     }
 
     pub fn load(cx: &ScopeState) {
-        let personas =
-            use_synced_storage::<LocalStorage, Personas>(cx, "ifs_personas".to_string(), || {
+        let personas: Signal<Personas> =
+            use_synced_storage(cx, "ifs_personas".to_string(), || {
                 Personas::new(Persona {
                     name: "Me".to_string(),
                     colour: Rgb(0x49, 0x55, 0x65),
                 })
             });
 
-        let chats =
-            use_synced_storage::<LocalStorage, Chats>(cx, "ifs_chats".to_string(), move || {
+        let chats: Signal<Chats> =
+            use_synced_storage(cx, "ifs_chats".to_string(), move || {
                 let p_uuid = *personas.read().get_index(0).unwrap().0;
                 let chat = Chat::new(p_uuid);
                 Chats::new(chat)

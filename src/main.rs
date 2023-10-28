@@ -3,6 +3,7 @@ mod colours;
 mod components;
 mod data;
 mod pages;
+mod storage;
 
 use components::*;
 use data::*;
@@ -16,20 +17,25 @@ use dioxus::{
     prelude::*,
 };
 
+use dioxus_std::storage::*;
+
 use crate::{colours::Colour, pages::chat::ChatPage};
 
 fn main() {
     #[cfg(not(target_arch = "wasm32"))]
-    dioxus_desktop::launch_cfg(
-        app,
+    {
+        set_dir!();
+        dioxus_desktop::launch_cfg(
+        App,
         dioxus_desktop::Config::new()
             .with_custom_head(r#"<link rel="stylesheet" href="public/tailwind.css">"#.to_string()),
-    );
+        );
+    }
     #[cfg(target_arch = "wasm32")]
     {
         wasm_logger::init(wasm_logger::Config::default());
         console_error_panic_hook::set_once();
-        dioxus_web::launch(app);
+        dioxus_web::launch(App);
     }
 }
 
@@ -47,7 +53,8 @@ fn test_app(cx: Scope) -> Element {
     })
 }
 
-fn app(cx: Scope) -> Element {
+#[component]
+fn App(cx: Scope) -> Element {
     AppState::load(cx);
 
     cx.render(rsx! {

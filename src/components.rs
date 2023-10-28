@@ -15,7 +15,7 @@ pub fn text_colour_from_bg(Rgb(r, g, b): Rgb) -> Colour {
     }
 }
 
-#[inline_props]
+#[component]
 pub fn PersonaButton<'a>(
     cx: Scope,
     name: String,
@@ -30,7 +30,7 @@ pub fn PersonaButton<'a>(
     })
 }
 
-#[inline_props]
+#[component]
 pub fn PersonaIcon(cx: Scope, colour: Rgb) -> Element {
     cx.render(rsx! {
         div {
@@ -50,7 +50,7 @@ pub fn PersonaIcon(cx: Scope, colour: Rgb) -> Element {
     })
 }
 
-#[inline_props]
+#[component]
 pub fn AddPersonaButton<'a>(cx: Scope, onclick: EventHandler<'a, MouseEvent>) -> Element {
     cx.render(rsx! {
         div { class: "flex flex-col items-center text-black justify-end w-auto h-auto leading-none mr-3",
@@ -89,7 +89,7 @@ fn AddPersonaIcon(cx: Scope) -> Element {
 }
 
 
-#[inline_props]
+#[component]
 pub fn AddNewPersonaDialog<'a>(cx: Scope, id: &'a str, on_create: EventHandler<'a, (String, Rgb)>) -> Element {
     let new_persona_name = use_state(cx, String::new);
     let new_persona_colour: &UseState<Rgb> = use_state(cx, Rgb::default);
@@ -131,7 +131,7 @@ pub fn AddNewPersonaDialog<'a>(cx: Scope, id: &'a str, on_create: EventHandler<'
     })
 }
 
-#[inline_props]
+#[component]
 fn AddNewPersonaButton(cx: Scope) -> Element {
     cx.render(rsx! {
         div { class: "flex justify-between",

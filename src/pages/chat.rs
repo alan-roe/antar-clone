@@ -12,7 +12,7 @@ use crate::colours::*;
 use dioxus::prelude::*;
 use dioxus_signals::*;
 
-#[inline_props]
+#[component]
 pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
     let add_persona_id = use_signal(cx, || format!("pd_{}", chat.uuid()));
     let input_id = use_signal(cx, || format!("mi_{}", chat.uuid()));
@@ -82,7 +82,7 @@ pub fn ChatPage(cx: Scope, chat: Chat) -> Element {
     })
 }
 
-#[inline_props]
+#[component]
 fn AddPersonaDialog<'a>(cx: Scope, id: &'a str, input_id: &'a str, add_new_persona_id: &'a str, added_personas: Signal<IndexSet<Uuid>>, active_persona: Signal<Uuid>) -> Element {
     let personas = AppState::personas(cx);
     cx.render(rsx! {
@@ -131,7 +131,7 @@ fn AddPersonaDialog<'a>(cx: Scope, id: &'a str, input_id: &'a str, add_new_perso
     })
 }
 
-#[inline_props]
+#[component]
 pub fn MessageBox(cx: Scope, messages: Signal<Messages>) -> Element {
     let personas = AppState::personas(cx);
 
@@ -172,7 +172,7 @@ pub fn MessageBox(cx: Scope, messages: Signal<Messages>) -> Element {
     })
 }
 
-#[inline_props]
+#[component]
 fn Message (cx: Scope, message: String, colour: Rgb) -> Element {
     let colour = *colour;
     cx.render(rsx!{
@@ -187,7 +187,7 @@ fn Message (cx: Scope, message: String, colour: Rgb) -> Element {
     })
 }
 
-#[inline_props]
+#[component]
 fn MessageInput<'a>(cx: Scope, id: &'a str, current_message: Signal<String>, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>, on_send: EventHandler<'a, ()>) -> Element {
     let personas = AppState::personas(cx);
     let eval = use_eval(cx);
@@ -256,7 +256,7 @@ fn MessageInput<'a>(cx: Scope, id: &'a str, current_message: Signal<String>, act
     })
 }
 
-#[inline_props]
+#[component]
 fn BottomBar<'a>(cx: Scope, add_persona_id: &'a str, input_id: &'a str, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>, on_send: EventHandler<'a, ()>) -> Element {
     let personas = AppState::personas(cx);
     let eval = use_eval(cx);
@@ -289,7 +289,7 @@ fn BottomBar<'a>(cx: Scope, add_persona_id: &'a str, input_id: &'a str, active_p
     })
 }
 
-#[inline_props]
+#[component]
 fn PersonaSelect<'a>(cx: Scope, input_id: &'a str, active_persona: Signal<Uuid>, added_personas: Signal<IndexSet<Uuid>>) -> Element {
     let personas = AppState::personas(cx);
     let eval = use_eval(cx);
