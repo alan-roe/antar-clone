@@ -1,16 +1,13 @@
 ### Tailwind CSS live updates
 
 ```bash
-npx tailwindcss -i ./input.css -o ./public/tailwind.css --watch
+tailwindcss -i ./input.css -o ./style/tailwind.css --watch
 ```
 
 ### Build
+```build
+trunk build
 
 ```bash
-cargo run
-```
-
-
-```bash
-dx serve --hot-reload
+trunk serve --open
 ```

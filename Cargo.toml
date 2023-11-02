@@ -3,24 +3,18 @@ name = "let-me-talk"
 version = "0.1.4"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 chrono = "0.4.31"
 console_error_panic_hook = "0.1.7"
-dioxus = { git = "https://github.com/DioxusLabs/dioxus", rev = "647815fa6f6db2304cda5bd36c78b4f8b0379f39" }
-dioxus-signals = { git = "https://github.com/DioxusLabs/dioxus", rev = "647815fa6f6db2304cda5bd36c78b4f8b0379f39", features = ["serde"]}
-dioxus-std = { git = "https://github.com/esimkowitz/dioxus-std/", branch = "storage-v4" }
 gloo-storage = "0.3.0"
 indexmap = { version = "2.0.2", features = ["serde"] }
 log = "0.4.20"
 serde = { version = "1.0.189", features = ["derive"] }
 wasm-logger = "0.2.0"
-
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-dioxus-desktop = {git = "https://github.com/DioxusLabs/dioxus", rev = "647815fa6f6db2304cda5bd36c78b4f8b0379f39" }
-uuid = { version = "1.4.1", features = [ "v4", "fast-rng", "macro-diagnostics", "serde" ] }
-
-[target.'cfg(target_arch = "wasm32")'.dependencies]
-dioxus-web = { git = "https://github.com/DioxusLabs/dioxus", rev = "647815fa6f6db2304cda5bd36c78b4f8b0379f39" }
 uuid = { version = "1.4.1", features = [ "js", "v4", "fast-rng", "macro-diagnostics", "serde" ] }
+leptos = { version = "0.5.2", features = ["csr", "nightly"] }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.37"
+wasm-bindgen = "0.2.88"
+web-sys = "0.3.65"

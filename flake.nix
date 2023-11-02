@@ -19,24 +19,17 @@
       unstable = import nixpkgs-unstable {
           inherit system;
       };
-      desktop-schemas = with pkgs; "${gtk3}/share/gsettings-schemas/${gtk3.name}";
     in {
       devShells.${system}.default = pkgs.mkShell {
-        shellHook = ''
-          export XDG_DATA_DIRS=${desktop-schemas}:$XDG_DATA_DIRS
-        '';
         buildInputs = with pkgs; [
-          (with fenix.packages.${system}; with stable; combine [
-            cargo rustc rust-src rustfmt clippy rust-analyzer targets.wasm32-unknown-unknown.stable.rust-std
+          (with fenix.packages.${system}; with latest; combine [
+            cargo rustc rust-src rustfmt clippy rust-analyzer targets.wasm32-unknown-unknown.latest.rust-std
           ])
-          unstable.dioxus-cli
-          unstable.nodejs_20
+          unstable.trunk
           unstable.nodePackages_latest.tailwindcss
-          # For Desktop stuff, stable pkgs because I don't know how to overlay a newer mesa version right now from this flake
-          pkg-config
-          gtk3
-          webkitgtk_4_1
-          libayatana-indicator
+          unstable.cargo-nextest
+          unstable.cargo-tarpaulin
+          unstable.wasm-pack # for web tests
         ];
       };
     };
