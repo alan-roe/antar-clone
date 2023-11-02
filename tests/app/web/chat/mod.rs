@@ -1,8 +1,13 @@
+use super::data_test_id;
+
 mod message;
+mod messages;
 
-use wasm_bindgen_test::*;
-
-#[wasm_bindgen_test]
-fn list_messages() {
-    assert_ne!(1, 2);
+fn get_message_content(test_id: String) -> String {
+    data_test_id(&test_id)
+        .child_nodes()
+        .get(1)
+        .unwrap()
+        .text_content()
+        .unwrap()
 }

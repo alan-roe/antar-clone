@@ -1,15 +1,17 @@
 mod message;
+mod messages;
 mod sender;
 mod chatid;
 
 pub use message::*;
+pub use messages::*;
 pub use sender::*;
 pub use chatid::*;
 
 use core::fmt::Debug;
-use indexmap::IndexMap;
+use std::marker::PhantomData;
 
-pub trait Chat<ID: ChatId, M: Message> {
+pub trait Chat<ID: ChatId, M: Message, MS: Messages<ID, M>> {
     fn new() -> Self;
 
     /// Returns the last message in the chat
@@ -27,17 +29,19 @@ pub trait Chat<ID: ChatId, M: Message> {
     /// Updates the message sender indexed by `id` using the `update_f` closure
     fn update_sender<F: FnOnce(&mut M::S)>(&mut self, id: &ID, update_f: F);
 
-    fn iter(&self) -> indexmap::map::Iter<ID, M>;
+    fn messages(&self) -> &MS;
 }
 
-pub struct PChat<ID: ChatId, M: Message> {
-    messages: IndexMap<ID, M>,
+pub struct PChat<ID: ChatId, M: Message, MS: Messages<ID, M>> {
+    messages: MS,
+    phantom_data: PhantomData<(M, ID)>
 }
 
-impl<ID: ChatId + Debug + Copy, M: Message + Clone + Debug> Chat<ID, M> for PChat<ID, M> {
+impl<ID: ChatId + Debug + Copy, M: Message + Clone + Debug, MS: Messages<ID, M> + Clone + Debug> Chat<ID, M, MS> for PChat<ID, M, MS> {
     fn new() -> Self {
         Self {
-            messages: Default::default(),
+            messages: Messages::new(),
+            phantom_data: PhantomData
         }
     }
 
@@ -58,7 +62,7 @@ impl<ID: ChatId + Debug + Copy, M: Message + Clone + Debug> Chat<ID, M> for PCha
     }
 
     fn delete_message(&mut self, id: &ID) -> bool {
-        self.messages.shift_remove(id).map_or(false, |_| true)
+        self.messages.remove(id)
     }
 
     fn update_content<F: FnOnce(&mut Content)>(&mut self, id: &ID, update_f: F) {
@@ -75,7 +79,7 @@ impl<ID: ChatId + Debug + Copy, M: Message + Clone + Debug> Chat<ID, M> for PCha
             .update_sender(update_f);
     }
 
-    fn iter(&self) -> indexmap::map::Iter<ID, M> {
-        self.messages.iter()
+    fn messages(&self) -> &MS {
+        &self.messages
     }
 }

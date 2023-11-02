@@ -1,13 +1,14 @@
 mod message;
+mod messages;
 mod sender;
 
 pub mod test_structs;
 
 use test_structs::*;
 use uuid::Uuid;
-use let_me_talk::system::{Chat, PChat, Content};
+use let_me_talk::system::{Chat, PChat, Content, PMessages, Messages};
 
-type TestChat = PChat<Uuid, TestMessage>;
+type TestChat = PChat<Uuid, TestMessage, PMessages<Uuid, TestMessage>>;
 
 #[test]
 fn new_chat() {
@@ -73,7 +74,7 @@ fn iter_messages() {
         chat.send_message(test_message.clone());
     });
 
-    chat.iter().for_each(|(_, message)| {
+    chat.messages().iter().for_each(|(_, message)| {
         assert_eq!(message, &test_message);
     });
 }

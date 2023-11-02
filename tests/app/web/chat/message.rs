@@ -8,15 +8,15 @@ use let_me_talk::system::{PMessage, Sender};
 use let_me_talk::web::{text_colour_from_bg, Message, ToStyle};
 
 use crate::system::test_structs::*;
+use crate::web::data_test_id;
 
 #[wasm_bindgen_test]
 fn show_message() {
     let sender = TestSender::default();
     let message = PMessage::new(sender.clone(), "New Message!".into());
-    mount_to_body(move || view! { <Message message= message.clone()/> });
+    mount_to_body(move || view! { <Message test_id="message1".to_string() message= message.clone()/> });
 
-    let document = leptos::document();
-    let div = document.query_selector("div").unwrap().unwrap();
+    let div = data_test_id("message1");
 
     let node_list = div.query_selector_all("div").unwrap();
     assert_eq!(

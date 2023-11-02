@@ -58,17 +58,3 @@ fn update_message() {
     let expected_message = TestMessage::with_sender("Test Sender2", "Test Message1");
     assert_eq!(chat.last_message(), Some(&expected_message));
 }
-
-#[test]
-fn iter_messages() {
-    let mut chat = TestChat::new();
-    let test_message = TestMessage::new(" Test Message1 ");
-
-    (0..2).for_each(|_| {
-        chat.send_message(test_message.clone());
-    });
-
-    chat.iter().for_each(|(_, message)| {
-        assert_eq!(message, &test_message);
-    });
-}
