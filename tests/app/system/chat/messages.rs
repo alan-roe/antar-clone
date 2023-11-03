@@ -7,8 +7,9 @@ use super::test_structs::*;
 fn iter_messages() {
     let mut messages = PMessages::new();
 
-    (0..2).for_each(|i| {
-        messages.insert(Uuid::new_v4(), TestMessage::new(format!("Test Message1 {i}")));
+    (0..2).for_each(|_| {
+        let id = Uuid::new_v4(); 
+        messages.insert(id, TestMessage::new(format!("Test Message1 {id}")));
     });
 
     messages.iter().for_each(|(i, message)| {

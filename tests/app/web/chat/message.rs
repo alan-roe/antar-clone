@@ -13,8 +13,8 @@ use crate::web::data_test_id;
 #[wasm_bindgen_test]
 fn show_message() {
     let sender = TestSender::default();
-    let message = PMessage::new(sender.clone(), "New Message!".into());
-    mount_to_body(move || view! { <Message test_id="message1".to_string() message= message.clone()/> });
+    let message = Signal::derive(move || PMessage::new(TestSender::default(), "New Message!".into()));
+    mount_to_body(move || view! { <Message test_id="message1".to_string() message= message/> });
 
     let div = data_test_id("message1");
 

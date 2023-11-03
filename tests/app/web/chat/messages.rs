@@ -17,12 +17,31 @@ fn list_messages() {
         messages.insert(ids[1], TestMessage::new("Test Message 2"));
         messages.insert(ids[2], TestMessage::new("Test Message 3"));
     });
-    mount_to_body(move || view! { <Messages test_id="messages".to_string() messages= messages/> });
 
-    let el = data_test_id("messages");
+    mount_to_body(move || view! { <Messages test_id="list_messages".to_string() messages= messages/> });
+    let el = data_test_id("list_messages");
     assert_eq!(el.child_element_count(), 3);
 
     assert_eq!(&get_message_content(ids[0].to_string()), "Test Message 1");
     assert_eq!(&get_message_content(ids[1].to_string()), "Test Message 2");
     assert_eq!(&get_message_content(ids[2].to_string()), "Test Message 3");
+}
+
+#[wasm_bindgen_test]
+fn add_message() {
+    let (messages, set_messages) = create_signal(TestMessages::new());
+    let id = Uuid::new_v4();
+    
+    mount_to_body(move || view! { <Messages test_id="add_message_messages".to_string() messages= messages/> });
+    let el = data_test_id("add_message_messages");
+
+    assert_eq!(el.child_element_count(), 0);
+
+    set_messages.update(|messages| {
+        messages.insert(id, TestMessage::new("Test Message 1"));
+    });
+
+    assert_eq!(el.child_element_count(), 1);
+
+    assert_eq!(&get_message_content(id.to_string()), "Test Message 1");
 }

@@ -4,12 +4,15 @@ use let_me_talk::system::{Sender, Content, Message, Colour};
 #[derive(PartialEq, Clone, Debug)]
 pub struct TestSender {
     name: String,
+    colour: Colour,
+    description: String
 }
 
 impl TestSender {
     pub fn new(name: impl ToString) -> Self {
         TestSender {
             name: name.to_string(),
+            ..Default::default()
         }
     }
 }
@@ -18,6 +21,8 @@ impl Default for TestSender {
     fn default() -> Self {
         TestSender {
             name: "Test Sender".to_string(),
+            colour: Colour::BLACK,
+            description: Default::default()
         }
     }
 }
@@ -27,12 +32,24 @@ impl Sender for TestSender {
         &self.name
     }
 
-    fn name_mut(&mut self) -> &mut String {
-        &mut self.name
+    fn update_name<F: FnMut(&mut String)>(&mut self, mut f: F) {
+        (f)(&mut self.name)
+    }
+    
+    fn colour(& self) -> & Colour {
+        &self.colour
     }
 
-    fn colour(&self) -> &Colour {
-        &Colour::BLACK
+    fn update_colour<F: FnMut(&mut Colour)>(&mut self, mut f: F) {
+        (f)(&mut self.colour)
+    }
+    
+    fn description(&self) -> &str {
+        &self.description
+    }
+
+    fn update_description<F: FnMut(&mut String)>(&mut self, mut f: F) {
+        (f)(&mut self.description)
     }
 }
 

@@ -13,12 +13,12 @@ fn new_sender() {
 fn change_sender() {
     let mut sender = PSender::new("Test Sender", "A sender for testing", Colour::BLACK);
 
-    *sender.name_mut() = "Changed Sender".to_string();
+    sender.update_name(|name| *name = "Changed Sender".to_string());
     assert_eq!(sender.name(), "Changed Sender");
 
-    *sender.description_mut() = "Changed sender for testing.".to_string();
+    sender.update_description(|description| *description = "Changed sender for testing.".to_string());
     assert_eq!(sender.description(), "Changed sender for testing.");
 
-    *sender.colour_mut() = Colour::BLACK;
+    sender.update_colour(|colour| *colour = Colour::BLACK);
     assert_eq!(sender.colour(), &Colour::BLACK);
 }
