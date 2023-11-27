@@ -9,7 +9,6 @@ type WebChat = PChat<Uuid, PMessage<PSender>, PMessages<Uuid, PMessage<PSender>>
 
 #[component]
 fn App() -> impl IntoView {
-    let value = RwSignal::new("".to_string());
     let (chat, set_chat) = create_signal(WebChat::new());
     log::info!("start of App");
     view! {
@@ -17,18 +16,14 @@ fn App() -> impl IntoView {
         <h2>"Chat name: " {move || chat.with(|chat| chat.name().to_owned())} </h2>
         <Messages messages=chat.with(|chat| chat.messages().read_only())
         />
-        <Input 
-            value=value
-            on_submit={ move |evt| {
-                log::info!("submitted {evt}");
+        <TextInput 
+            on_submit={ move |value| {
+                log::info!("sent input {value}");
                 set_chat.update(|chat| {
-                    chat.send_message(PMessage::new(PSender::new("New Sender", "", Colour::BLACK), Content::text(value())));
-                    *chat.name_mut() = value();
+                    chat.send_message(PMessage::new(PSender::new("New Sender", "", Colour::BLACK), Content::text(value)));
                 });
-                // value.set("".to_owned());
             }} 
         />
-        // <Messages />
     }
 }
 

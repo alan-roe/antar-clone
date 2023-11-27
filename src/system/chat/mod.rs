@@ -44,16 +44,6 @@ pub struct PChat<ID: ChatId + 'static, M: Message + 'static, MS: Messages<ID, M>
     phantom_data: PhantomData<(M, ID)>
 }
 
-// impl<ID: ChatId, M: Message, MS: Messages<ID, M>> IntoIterator for PChat<ID, M, MS> {
-//     type Item = (ID, M);
-
-//     type IntoIter = IntoIter<ID, M>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.messages.with(IntoIterator::into_iter)
-//     }
-// }
-
 impl<ID: ChatId + Debug + Copy, M: Message + Clone + Debug, MS: Messages<ID, M> + Clone + Debug> Chat<ID, M, MS> for PChat<ID, M, MS> {
     fn new() -> Self {
         Self {

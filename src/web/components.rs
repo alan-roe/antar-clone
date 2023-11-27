@@ -22,7 +22,7 @@ where
     let testing = !test_id.is_empty();
 
     let mut element = view! {
-        <ul>
+        <div>
         <For
             each={messages}
             key=|message| message.0
@@ -60,7 +60,7 @@ where
                 }
             }
         />
-    </ul>
+        </div>
     };
 
     if testing {
@@ -105,12 +105,14 @@ where
 }
 
 #[component]
-pub fn Input<F: FnMut(String) + 'static>(value: RwSignal<String>, mut on_submit: F) -> impl IntoView {
+pub fn TextInput<F: FnMut(String) + 'static>(#[prop(optional)] test_id: String, mut on_submit: F) -> impl IntoView {
+    let value = RwSignal::new("".to_owned());
     let mut submit = move |evt : KeyboardEvent| {
         (on_submit)(event_target_value(&evt))
     };
-    view! {
-        <textarea
+
+    let el = view! {
+        <textarea data-testid={test_id}
             on:keydown= move |evt| {
                 if !evt.shift_key() && &evt.key() == "Enter" {
                     evt.prevent_default();
@@ -125,5 +127,6 @@ pub fn Input<F: FnMut(String) + 'static>(value: RwSignal<String>, mut on_submit:
             prop:value=value
             placeholder="Start Talking..."
         />
-    }
+    };
+    el
 }
